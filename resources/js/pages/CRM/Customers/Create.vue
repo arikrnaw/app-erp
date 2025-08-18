@@ -136,7 +136,7 @@
                             </div>
 
                             <div class="flex items-center justify-end mt-4">
-                                <Link :href="route('customers.index')">
+                                <Link :href="route('crm.customers.index')">
                                 <Button variant="outline" type="button" class="mr-2">
                                     Cancel
                                 </Button>
@@ -183,6 +183,6 @@ const form = useForm<CustomerForm>({
 })
 
 const submit = (): void => {
-    form.post(route('customers.store'))
+    form.post(route('crm.customers.store'))
 }
 </script>

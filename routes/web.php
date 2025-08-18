@@ -43,19 +43,19 @@ Route::middleware([
         return Inertia::render('Products/Edit', ['id' => $id]);
     })->name('products.edit');
 
-    // Customers
-    Route::get('customers', function () {
-        return Inertia::render('Customers/Index');
-    })->name('customers.index');
-    Route::get('customers/create', function () {
-        return Inertia::render('Customers/Create');
-    })->name('customers.create');
-    Route::get('customers/{id}', function ($id) {
-        return Inertia::render('Customers/Show', ['id' => $id]);
-    })->name('customers.show');
-    Route::get('customers/{id}/edit', function ($id) {
-        return Inertia::render('Customers/Edit', ['id' => $id]);
-    })->name('customers.edit');
+    // CRM - Customers
+    Route::get('crm/customers', function () {
+        return Inertia::render('CRM/Customers/Index');
+    })->name('crm.customers.index');
+    Route::get('crm/customers/create', function () {
+        return Inertia::render('CRM/Customers/Create');
+    })->name('crm.customers.create');
+    Route::get('crm/customers/{id}', function ($id) {
+        return Inertia::render('CRM/Customers/Show', ['id' => $id]);
+    })->name('crm.customers.show');
+    Route::get('crm/customers/{id}/edit', function ($id) {
+        return Inertia::render('CRM/Customers/Edit', ['id' => $id]);
+    })->name('crm.customers.edit');
 
     // Suppliers
     Route::get('suppliers', function () {
@@ -850,6 +850,65 @@ Route::middleware([
         Route::get('/service-categories/{id}/edit', function ($id) {
             return Inertia::render('CustomerService/ServiceCategories/Edit', ['id' => $id]);
         })->name('service-categories.edit');
+    });
+
+    // Settings - RBAC Module
+    Route::prefix('settings/rbac')->name('settings.rbac.')->group(function () {
+        // Dashboard
+        Route::get('/', function () {
+            return Inertia::render('settings/Rbac/Index');
+        })->name('index');
+
+        // Roles
+        Route::get('/roles', function () {
+            return Inertia::render('settings/Rbac/Roles/Index');
+        })->name('roles.index');
+
+        Route::get('/roles/create', function () {
+            return Inertia::render('settings/Rbac/Roles/Create');
+        })->name('roles.create');
+
+        Route::get('/roles/{id}', function ($id) {
+            return Inertia::render('settings/Rbac/Roles/Show', ['id' => $id]);
+        })->name('roles.show');
+
+        Route::get('/roles/{id}/edit', function ($id) {
+            return Inertia::render('settings/Rbac/Roles/Edit', ['id' => $id]);
+        })->name('roles.edit');
+
+        // Permissions
+        Route::get('/permissions', function () {
+            return Inertia::render('settings/Rbac/Permissions/Index');
+        })->name('permissions.index');
+
+        Route::get('/permissions/create', function () {
+            return Inertia::render('settings/Rbac/Permissions/Create');
+        })->name('permissions.create');
+
+        Route::get('/permissions/{id}', function ($id) {
+            return Inertia::render('settings/Rbac/Permissions/Show', ['id' => $id]);
+        })->name('permissions.show');
+
+        Route::get('/permissions/{id}/edit', function ($id) {
+            return Inertia::render('settings/Rbac/Permissions/Edit', ['id' => $id]);
+        })->name('permissions.edit');
+
+        // Users
+        Route::get('/users', function () {
+            return Inertia::render('settings/Rbac/Users/Index');
+        })->name('users.index');
+
+        Route::get('/users/create', function () {
+            return Inertia::render('settings/Rbac/Users/Create');
+        })->name('users.create');
+
+        Route::get('/users/{id}', function ($id) {
+            return Inertia::render('settings/Rbac/Users/Show', ['id' => $id]);
+        })->name('users.show');
+
+        Route::get('/users/{id}/edit', function ($id) {
+            return Inertia::render('settings/Rbac/Users/Edit', ['id' => $id]);
+        })->name('users.edit');
     });
 });
 

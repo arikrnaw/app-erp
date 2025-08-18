@@ -9,13 +9,13 @@
                     Customer Details
                 </h2>
                 <div class="flex gap-2">
-                    <Link :href="route('customers.edit', customer.id)">
+                    <Link :href="route('crm.customers.edit', customer.id)">
                     <Button variant="outline">
                         <Edit class="w-4 h-4 mr-2" />
                         Edit
                     </Button>
                     </Link>
-                    <Link :href="route('customers.index')">
+                    <Link :href="route('crm.customers.index')">
                     <Button variant="outline">
                         <ArrowLeft class="w-4 h-4 mr-2" />
                         Back

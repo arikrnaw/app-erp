@@ -33,6 +33,9 @@ use App\Http\Controllers\Api\PurchaseReturnController;
 use App\Http\Controllers\Api\BillOfMaterialController;
 use App\Http\Controllers\Api\ProductionPlanController;
 use App\Http\Controllers\Api\WorkOrderController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\UserManagementController;
 use App\Http\Controllers\Settings\ProfileController;
 use Laravel\WorkOS\Http\Middleware\ValidateSessionWithWorkOS;
 use Inertia\Inertia;
@@ -454,4 +457,36 @@ Route::prefix('customer-service')->group(function () {
     // Service Categories
     Route::apiResource('service-categories', \App\Http\Controllers\Api\ServiceCategoryController::class);
     Route::get('service-categories/tree', [\App\Http\Controllers\Api\ServiceCategoryController::class, 'tree']);
+});
+
+// Authentication Routes
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [\App\Http\Controllers\Auth\AuthController::class, 'login']);
+    Route::post('/workos-login', [\App\Http\Controllers\Auth\AuthController::class, 'workosLogin']);
+    Route::post('/register', [\App\Http\Controllers\Auth\AuthController::class, 'register']);
+    Route::post('/logout', [\App\Http\Controllers\Auth\AuthController::class, 'logout']);
+    Route::get('/me', [\App\Http\Controllers\Auth\AuthController::class, 'me']);
+    Route::put('/change-password', [\App\Http\Controllers\Auth\AuthController::class, 'changePassword']);
+    Route::put('/update-profile', [\App\Http\Controllers\Auth\AuthController::class, 'updateProfile']);
+    Route::post('/disconnect-workos', [\App\Http\Controllers\Auth\AuthController::class, 'disconnectWorkOS']);
+});
+
+// RBAC (Role-Based Access Control) Module
+Route::prefix('rbac')->group(function () {
+    // Roles
+    Route::apiResource('roles', RoleController::class);
+    Route::get('roles/statistics', [RoleController::class, 'statistics']);
+    
+    // Permissions
+    Route::apiResource('permissions', PermissionController::class);
+    Route::get('permissions/modules', [PermissionController::class, 'modules']);
+    Route::get('permissions/actions', [PermissionController::class, 'actions']);
+    Route::get('permissions/statistics', [PermissionController::class, 'statistics']);
+    
+    // User Management
+    Route::apiResource('users', UserManagementController::class);
+    Route::post('users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus']);
+    Route::post('users/{user}/assign-roles', [UserManagementController::class, 'assignRoles']);
+    Route::get('users/available-roles', [UserManagementController::class, 'availableRoles']);
+    Route::get('users/statistics', [UserManagementController::class, 'statistics']);
 });

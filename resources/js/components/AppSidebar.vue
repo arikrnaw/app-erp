@@ -180,6 +180,11 @@ const mainNavItems: NavItem[] = [
         icon: Users,
         items: [
             {
+                title: 'Customers',
+                href: '/crm/customers',
+                icon: Users,
+            },
+            {
                 title: 'Prospects',
                 href: '/crm/prospects',
                 icon: UserCheck,
@@ -236,11 +241,6 @@ const mainNavItems: NavItem[] = [
                 icon: Users,
             },
         ],
-    },
-    {
-        title: 'Customers',
-        href: '/customers',
-        icon: Users,
     },
     {
         title: 'Suppliers',
@@ -322,6 +322,11 @@ const mainNavItems: NavItem[] = [
                 title: 'User Management',
                 href: '/settings/users',
                 icon: Users,
+            },
+            {
+                title: 'Roles & Permissions',
+                href: '/settings/rbac',
+                icon: Shield,
             },
             {
                 title: 'System Configuration',

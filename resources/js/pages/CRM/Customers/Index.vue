@@ -8,7 +8,7 @@
                 <h2 class="font-semibold text-xl leading-tight">
                     Customers
                 </h2>
-                <Link :href="route('customers.create')">
+                <Link :href="route('crm.customers.create')">
                 <Button>
                     <Plus class="w-4 h-4 mr-2" />
                     Add Customer
@@ -91,13 +91,13 @@
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem as-child>
-                                                    <Link :href="route('customers.show', customer.id)">
+                                                    <Link :href="route('crm.customers.show', customer.id)">
                                                     <Eye class="w-4 h-4 mr-2" />
                                                     View
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem as-child>
-                                                    <Link :href="route('customers.edit', customer.id)">
+                                                    <Link :href="route('crm.customers.edit', customer.id)">
                                                     <Edit class="w-4 h-4 mr-2" />
                                                     Edit
                                                     </Link>
@@ -156,7 +156,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const breadcrumbs: BreadcrumbItemType[] = [
     { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Customers', href: '/customers' }
+    { title: 'CRM', href: '/crm/customers' },
 ]
 
 const customers = ref<Customer[]>([])
@@ -215,7 +215,7 @@ const changePage = (page: number) => {
     if (statusFilter.value && statusFilter.value !== 'all') params.append('status', statusFilter.value)
     params.append('page', page.toString())
 
-    router.get(`/customers?${params.toString()}`)
+    router.get(`/crm/customers?${params.toString()}`)
 }
 
 const deleteCustomer = async (id: number) => {
