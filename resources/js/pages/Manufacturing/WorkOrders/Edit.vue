@@ -1,0 +1,489 @@
+<template>
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Edit Work Order</h1>
+                <p class="text-muted-foreground">
+                    Update work order details and settings
+                </p>
+            </div>
+            <Button @click="navigateToShow" variant="outline">
+                <ArrowLeft class="h-4 w-4 mr-2" />
+                Back to Work Order
+            </Button>
+        </div>
+
+        <div v-if="loading" class="flex justify-center py-8">
+            <Loader2 class="h-8 w-8 animate-spin" />
+        </div>
+
+        <div v-else-if="!workOrder" class="text-center py-8">
+            <Wrench class="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 class="text-lg font-semibold mb-2">Work order not found</h3>
+            <p class="text-muted-foreground mb-4">
+                The work order you're looking for doesn't exist.
+            </p>
+            <Button @click="navigateToIndex">
+                <ArrowLeft class="h-4 w-4 mr-2" />
+                Back to Work Orders
+            </Button>
+        </div>
+
+        <form v-else @submit.prevent="handleSubmit" class="space-y-6">
+            <!-- Basic Information -->
+            <Card>
+                <CardHeader>
+                    <CardTitle>Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <Label for="work_order_number">Work Order Number</Label>
+                            <Input id="work_order_number" v-model="form.work_order_number" disabled />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="name">Name *</Label>
+                            <Input id="name" v-model="form.name" placeholder="Enter work order name"
+                                :class="{ 'border-red-500': errors.name }" />
+                            <p v-if="errors.name" class="text-sm text-red-500">{{ errors.name }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="description">Description</Label>
+                        <Textarea id="description" v-model="form.description" placeholder="Enter description"
+                            rows="3" />
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-2">
+                            <Label for="product_id">Product *</Label>
+                            <Select v-model="form.product_id" :class="{ 'border-red-500': errors.product_id }">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select product" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="product in products" :key="product.id"
+                                        :value="product.id.toString()">
+                                        {{ product.name }} ({{ product.sku }})
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p v-if="errors.product_id" class="text-sm text-red-500">{{ errors.product_id }}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="production_plan_id">Production Plan</Label>
+                            <Select v-model="form.production_plan_id">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select production plan (optional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">No Production Plan</SelectItem>
+                                    <SelectItem v-for="plan in productionPlans" :key="plan.id"
+                                        :value="plan.id.toString()">
+                                        {{ plan.name }} ({{ plan.plan_number }})
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="bill_of_material_id">Bill of Material</Label>
+                            <Select v-model="form.bill_of_material_id">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select BOM (optional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">No BOM</SelectItem>
+                                    <SelectItem v-for="bom in billOfMaterials" :key="bom.id" :value="bom.id.toString()">
+                                        {{ bom.name }} ({{ bom.bom_number }})
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-2">
+                            <Label for="planned_quantity">Planned Quantity *</Label>
+                            <Input id="planned_quantity" v-model="form.planned_quantity" type="number" step="0.0001"
+                                min="0.0001" placeholder="1.0000"
+                                :class="{ 'border-red-500': errors.planned_quantity }" />
+                            <p v-if="errors.planned_quantity" class="text-sm text-red-500">{{ errors.planned_quantity }}
+                            </p>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="unit">Unit *</Label>
+                            <Input id="unit" v-model="form.unit" placeholder="pcs, kg, m, etc."
+                                :class="{ 'border-red-500': errors.unit }" />
+                            <p v-if="errors.unit" class="text-sm text-red-500">{{ errors.unit }}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="priority">Priority *</Label>
+                            <Select v-model="form.priority">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select priority" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="urgent">Urgent</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-2">
+                            <Label for="start_date">Start Date *</Label>
+                            <Input id="start_date" v-model="form.start_date" type="date"
+                                :class="{ 'border-red-500': errors.start_date }" />
+                            <p v-if="errors.start_date" class="text-sm text-red-500">{{ errors.start_date }}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="due_date">Due Date *</Label>
+                            <Input id="due_date" v-model="form.due_date" type="date"
+                                :class="{ 'border-red-500': errors.due_date }" />
+                            <p v-if="errors.due_date" class="text-sm text-red-500">{{ errors.due_date }}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="status">Status *</Label>
+                            <Select v-model="form.status">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                    <SelectItem value="approved">Approved</SelectItem>
+                                    <SelectItem value="in_progress">In Progress</SelectItem>
+                                    <SelectItem value="paused">Paused</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Work Center & Assignment -->
+            <Card>
+                <CardHeader>
+                    <CardTitle>Work Center & Assignment</CardTitle>
+                </CardHeader>
+                <CardContent class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-2">
+                            <Label for="work_center_id">Work Center</Label>
+                            <Select v-model="form.work_center_id">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select work center" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="workCenter in workCenters" :key="workCenter.id"
+                                        :value="workCenter.id.toString()">
+                                        {{ workCenter.name }} ({{ workCenter.work_center_code }})
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="assigned_to">Assigned To</Label>
+                            <Select v-model="form.assigned_to">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select operator" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">Not Assigned</SelectItem>
+                                    <SelectItem v-for="user in users" :key="user.id" :value="user.id.toString()">
+                                        {{ user.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="warehouse_id">Warehouse</Label>
+                            <Select v-model="form.warehouse_id">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select warehouse" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="warehouse in warehouses" :key="warehouse.id"
+                                        :value="warehouse.id.toString()">
+                                        {{ warehouse.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <Label for="estimated_hours">Estimated Hours</Label>
+                            <Input id="estimated_hours" v-model="form.estimated_hours" type="number" step="0.1" min="0"
+                                placeholder="0.0" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="estimated_cost">Estimated Cost</Label>
+                            <Input id="estimated_cost" v-model="form.estimated_cost" type="number" step="0.01" min="0"
+                                placeholder="0.00" />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Notes -->
+            <Card>
+                <CardHeader>
+                    <CardTitle>Notes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div class="space-y-2">
+                        <Label for="notes">Additional Notes</Label>
+                        <Textarea id="notes" v-model="form.notes" placeholder="Enter any additional notes..."
+                            rows="3" />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Actions -->
+            <div class="flex justify-end gap-4">
+                <Button @click="navigateToShow" type="button" variant="outline">
+                    Cancel
+                </Button>
+                <Button type="submit" :disabled="submitting">
+                    <Loader2 v-if="submitting" class="h-4 w-4 mr-2 animate-spin" />
+                    <Save v-else class="h-4 w-4 mr-2" />
+                    Update Work Order
+                </Button>
+            </div>
+        </form>
+    </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { router } from '@inertiajs/vue3';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    ArrowLeft,
+    Save,
+    Loader2,
+    Wrench,
+} from 'lucide-vue-next';
+import type { Product, ProductionPlan, BillOfMaterial, WorkCenter, Warehouse, User, WorkOrder } from '@/types/erp';
+import apiService from '@/services/api';
+
+// Props
+interface Props {
+    id: number;
+}
+
+const props = defineProps<Props>();
+
+// Data
+const workOrder = ref<WorkOrder | null>(null);
+const products = ref<Product[]>([]);
+const productionPlans = ref<ProductionPlan[]>([]);
+const billOfMaterials = ref<BillOfMaterial[]>([]);
+const workCenters = ref<WorkCenter[]>([]);
+const warehouses = ref<Warehouse[]>([]);
+const users = ref<User[]>([]);
+const loading = ref(false);
+const submitting = ref(false);
+const errors = ref<Record<string, string>>({});
+
+// Form
+const form = ref({
+    work_order_number: '',
+    name: '',
+    description: '',
+    product_id: '',
+    production_plan_id: '',
+    bill_of_material_id: '',
+    planned_quantity: 1,
+    unit: 'pcs',
+    start_date: '',
+    due_date: '',
+    priority: 'medium',
+    status: 'draft',
+    work_center_id: '',
+    assigned_to: '',
+    warehouse_id: '',
+    estimated_hours: 0,
+    estimated_cost: 0,
+    notes: '',
+});
+
+// Methods
+const fetchWorkOrder = async () => {
+    loading.value = true;
+    try {
+        const response = await apiService.getWorkOrder(props.id);
+        workOrder.value = response;
+
+        // Populate form with existing data
+        form.value = {
+            work_order_number: response.work_order_number,
+            name: response.name,
+            description: response.description || '',
+            product_id: response.product_id.toString(),
+            production_plan_id: response.production_plan_id?.toString() || '',
+            bill_of_material_id: response.bill_of_material_id?.toString() || '',
+            planned_quantity: response.planned_quantity,
+            unit: response.unit,
+            start_date: response.start_date,
+            due_date: response.due_date,
+            priority: response.priority,
+            status: response.status,
+            work_center_id: response.work_center_id?.toString() || '',
+            assigned_to: response.assigned_to?.toString() || '',
+            warehouse_id: response.warehouse_id?.toString() || '',
+            estimated_hours: response.estimated_hours || 0,
+            estimated_cost: response.estimated_cost || 0,
+            notes: response.notes || '',
+        };
+    } catch (error) {
+        console.error('Error fetching work order:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const fetchProducts = async () => {
+    try {
+        const response = await apiService.getProducts();
+        products.value = response.data;
+    } catch (error) {
+        console.error('Error fetching products:', error);
+    }
+};
+
+const fetchProductionPlans = async () => {
+    try {
+        const response = await apiService.getProductionPlans();
+        productionPlans.value = response.data;
+    } catch (error) {
+        console.error('Error fetching production plans:', error);
+    }
+};
+
+const fetchBillOfMaterials = async () => {
+    try {
+        const response = await apiService.getBillOfMaterials();
+        billOfMaterials.value = response.data;
+    } catch (error) {
+        console.error('Error fetching BOMs:', error);
+    }
+};
+
+const fetchWorkCenters = async () => {
+    try {
+        const response = await apiService.getWorkCenters();
+        workCenters.value = response.data;
+    } catch (error) {
+        console.error('Error fetching work centers:', error);
+    }
+};
+
+const fetchWarehouses = async () => {
+    try {
+        const response = await apiService.getWarehouses();
+        warehouses.value = response.data;
+    } catch (error) {
+        console.error('Error fetching warehouses:', error);
+    }
+};
+
+const fetchUsers = async () => {
+    try {
+        const response = await apiService.getUsers();
+        users.value = response.data;
+    } catch (error) {
+        console.error('Error fetching users:', error);
+    }
+};
+
+const handleSubmit = async () => {
+    submitting.value = true;
+    errors.value = {};
+
+    try {
+        // Validate required fields
+        if (!form.value.name) errors.value.name = 'Name is required';
+        if (!form.value.product_id) errors.value.product_id = 'Product is required';
+        if (!form.value.planned_quantity || form.value.planned_quantity <= 0) {
+            errors.value.planned_quantity = 'Quantity must be greater than 0';
+        }
+        if (!form.value.unit) errors.value.unit = 'Unit is required';
+        if (!form.value.start_date) errors.value.start_date = 'Start date is required';
+        if (!form.value.due_date) errors.value.due_date = 'Due date is required';
+
+        // Validate dates
+        if (form.value.start_date && form.value.due_date && form.value.start_date > form.value.due_date) {
+            errors.value.due_date = 'Due date must be after start date';
+        }
+
+        if (Object.keys(errors.value).length > 0) {
+            submitting.value = false;
+            return;
+        }
+
+        // Prepare data for submission
+        const submitData = {
+            ...form.value,
+            product_id: parseInt(form.value.product_id),
+            production_plan_id: form.value.production_plan_id ? parseInt(form.value.production_plan_id) : null,
+            bill_of_material_id: form.value.bill_of_material_id ? parseInt(form.value.bill_of_material_id) : null,
+            work_center_id: form.value.work_center_id ? parseInt(form.value.work_center_id) : null,
+            assigned_to: form.value.assigned_to ? parseInt(form.value.assigned_to) : null,
+            warehouse_id: form.value.warehouse_id ? parseInt(form.value.warehouse_id) : null,
+            planned_quantity: parseFloat(form.value.planned_quantity.toString()),
+            estimated_hours: parseFloat(form.value.estimated_hours.toString()),
+            estimated_cost: parseFloat(form.value.estimated_cost.toString()),
+        };
+
+        await apiService.updateWorkOrder(props.id, submitData);
+        router.visit(`/manufacturing/work-orders/${props.id}`);
+    } catch (error: any) {
+        if (error.response?.data?.errors) {
+            errors.value = error.response.data.errors;
+        } else {
+            console.error('Error updating work order:', error);
+        }
+    } finally {
+        submitting.value = false;
+    }
+};
+
+const navigateToIndex = () => {
+    router.visit('/manufacturing/work-orders');
+};
+
+const navigateToShow = () => {
+    router.visit(`/manufacturing/work-orders/${props.id}`);
+};
+
+// Lifecycle
+onMounted(() => {
+    fetchWorkOrder();
+    fetchProducts();
+    fetchProductionPlans();
+    fetchBillOfMaterials();
+    fetchWorkCenters();
+    fetchWarehouses();
+    fetchUsers();
+});
+</script>
