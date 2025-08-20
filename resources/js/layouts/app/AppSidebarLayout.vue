@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import Toaster from '@/components/ui/sonner.vue';
+import AiChatWidget from '@/components/AiChatWidget.vue';
 import type { BreadcrumbItemType } from '@/types';
 
 interface Props {
@@ -24,4 +25,5 @@ withDefaults(defineProps<Props>(), {
         </AppContent>
     </AppShell>
     <Toaster />
+    <AiChatWidget />
 </template>

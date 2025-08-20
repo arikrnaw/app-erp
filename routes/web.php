@@ -15,6 +15,11 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
+    // AI Chat
+    Route::get('ai-chat', function () {
+        return Inertia::render('AiChat/Index');
+    })->name('ai-chat.index');
+
     // Categories
     Route::get('categories', function () {
         return Inertia::render('Categories/Index');

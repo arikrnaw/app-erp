@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\WorkOrderController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserManagementController;
+use App\Http\Controllers\Api\AiChatController;
 use App\Http\Controllers\Settings\ProfileController;
 use Laravel\WorkOS\Http\Middleware\ValidateSessionWithWorkOS;
 use Inertia\Inertia;
@@ -489,4 +490,11 @@ Route::prefix('rbac')->group(function () {
     Route::post('users/{user}/assign-roles', [UserManagementController::class, 'assignRoles']);
     Route::get('users/available-roles', [UserManagementController::class, 'availableRoles']);
     Route::get('users/statistics', [UserManagementController::class, 'statistics']);
+});
+
+// AI Chat Module
+Route::prefix('ai-chat')->group(function () {
+    Route::post('/chat', [AiChatController::class, 'chat']);
+    Route::get('/history', [AiChatController::class, 'getChatHistory']);
+    Route::delete('/history', [AiChatController::class, 'clearChatHistory']);
 });

@@ -6,7 +6,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import ScrollArea from '@/components/ui/scroll-area.vue';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Package, Users, Truck, ShoppingCart, ShoppingBag, DollarSign, BookOpenCheck, Calculator, Receipt, FileText, CreditCard, Warehouse, Package2, AlertTriangle, TrendingUp, BarChart3, FileSpreadsheet, ClipboardList, PackageCheck, RotateCcw, Settings, Calendar, Wrench, UserCheck, Clock, CreditCard as CreditCardIcon, MessageSquare, Target, Users2, DollarSign as DollarSignIcon, Headphones, Shield, Ticket, Tag } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Package, Users, Truck, ShoppingCart, ShoppingBag, DollarSign, BookOpenCheck, Calculator, Receipt, FileText, CreditCard, Warehouse, Package2, AlertTriangle, TrendingUp, BarChart3, FileSpreadsheet, ClipboardList, PackageCheck, RotateCcw, Settings, Calendar, Wrench, UserCheck, Clock, CreditCard as CreditCardIcon, MessageSquare, Target, Users2, DollarSign as DollarSignIcon, Headphones, Shield, Ticket, Tag, Bot } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -308,6 +308,11 @@ const mainNavItems: NavItem[] = [
                 icon: Tag,
             },
         ],
+    },
+    {
+        title: 'AI Assistant',
+        href: '/ai-chat',
+        icon: Bot,
     },
     {
         title: 'Settings',
