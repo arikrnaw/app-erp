@@ -27,7 +27,7 @@ return new class extends Migration
             $table->integer('duration_hours')->default(0);
             $table->integer('max_participants')->nullable();
             $table->decimal('cost_per_participant', 15, 2)->default(0);
-            $table->string('currency', 3)->default('USD');
+            $table->string('currency', 3)->default('IDR');
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->enum('status', ['draft', 'scheduled', 'in_progress', 'completed', 'cancelled'])->default('draft');

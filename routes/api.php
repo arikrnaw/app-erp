@@ -187,6 +187,7 @@ Route::middleware([
     });
 
     // Chart of Accounts
+    Route::get('chart-of-accounts/export', [ChartOfAccountController::class, 'export']);
     Route::apiResource('chart-of-accounts', ChartOfAccountController::class);
 
     // Journal Entries

@@ -62,7 +62,7 @@
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-muted-foreground">Total Cost</Label>
-                            <p class="text-sm font-semibold">${{ formatCurrency(bom.total_cost) }}</p>
+                                                            <p class="text-sm font-semibold">{{ formatCurrency(bom.total_cost) }}</p>
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-muted-foreground">Components</Label>
@@ -149,11 +149,11 @@
                                 </div>
                                 <div>
                                     <Label class="text-sm font-medium text-muted-foreground">Unit Cost</Label>
-                                    <p class="text-sm">${{ formatCurrency(item.unit_cost) }}</p>
+                                    <p class="text-sm">{{ formatCurrency(item.unit_cost) }}</p>
                                 </div>
                                 <div>
                                     <Label class="text-sm font-medium text-muted-foreground">Total Cost</Label>
-                                    <p class="text-sm font-semibold">${{ formatCurrency(item.total_cost) }}</p>
+                                    <p class="text-sm font-semibold">{{ formatCurrency(item.total_cost) }}</p>
                                 </div>
                             </div>
                             <div v-if="item.description" class="mt-4">

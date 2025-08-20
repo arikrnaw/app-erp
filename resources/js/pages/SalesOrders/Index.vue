@@ -92,7 +92,7 @@
                                         </TableCell>
                                         <TableCell>{{ formatDate(order.order_date) }}</TableCell>
                                         <TableCell>
-                                            <span class="font-medium">${{ formatCurrency(order.total_amount) }}</span>
+                                            <span class="font-medium">{{ formatCurrency(order.total_amount) }}</span>
                                         </TableCell>
                                         <TableCell>
                                             <span :class="[
@@ -294,7 +294,10 @@ const formatDate = (dateString: string): string => {
 }
 
 const formatCurrency = (amount: number): string => {
-    return amount.toFixed(2)
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+    }).format(amount)
 }
 
 const getStatusColor = (status: string): string => {

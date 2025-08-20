@@ -122,11 +122,11 @@
                                     <div class="w-64 space-y-2">
                                         <div class="flex justify-between">
                                             <span class="font-medium">Subtotal:</span>
-                                            <span>${{ formatCurrency(calculateSubtotal()) }}</span>
+                                            <span>{{ formatCurrency(calculateSubtotal()) }}</span>
                                         </div>
                                         <div class="flex justify-between">
                                             <span class="font-medium">Total Amount:</span>
-                                            <span class="text-lg font-bold">${{ formatCurrency(calculateTotal())
+                                            <span class="text-lg font-bold">{{ formatCurrency(calculateTotal())
                                                 }}</span>
                                         </div>
                                     </div>
@@ -244,7 +244,10 @@ const calculateTotal = (): number => {
 }
 
 const formatCurrency = (amount: number): string => {
-    return amount.toFixed(2)
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+    }).format(amount)
 }
 
 const fetchSuppliers = async () => {

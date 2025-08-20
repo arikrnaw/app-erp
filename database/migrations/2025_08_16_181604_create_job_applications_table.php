@@ -37,7 +37,7 @@ return new class extends Migration
             $table->text('current_position')->nullable();
             $table->decimal('current_salary', 15, 2)->nullable();
             $table->decimal('expected_salary', 15, 2)->nullable();
-            $table->string('currency', 3)->default('USD');
+            $table->string('currency', 3)->default('IDR');
             
             // Application Details
             $table->text('cover_letter')->nullable();

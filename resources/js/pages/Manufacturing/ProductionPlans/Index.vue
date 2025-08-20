@@ -129,7 +129,7 @@
                                     <span>Due: {{ formatDate(plan.due_date) }}</span>
                                 </div>
                                 <div class="flex items-center gap-4 text-sm text-muted-foreground">
-                                    <span>Est. Cost: ${{ formatCurrency(plan.estimated_cost) }}</span>
+                                                                                <span>Est. Cost: {{ formatCurrency(plan.estimated_cost) }}</span>
                                     <span>Work Orders: {{ plan.work_orders?.length || 0 }}</span>
                                     <span>Created: {{ formatDate(plan.created_at) }}</span>
                                 </div>

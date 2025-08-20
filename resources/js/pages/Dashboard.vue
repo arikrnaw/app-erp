@@ -3,238 +3,331 @@
     <Head title="Dashboard" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6">
-            <div class="mb-6">
-                <h2 class="font-semibold text-xl text-white leading-tight">
-                    Dashboard
-                </h2>
+        <div class="p-6 space-y-6">
+            <!-- Header -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
+                    <p class="text-muted-foreground">
+                        Welcome back! Here's what's happening with your business today.
+                    </p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <Button variant="outline" size="sm">
+                        <Download class="h-4 w-4 mr-2" />
+                        Export Report
+                    </Button>
+                </div>
             </div>
 
-            <div class="max-w-7xl mx-auto">
-                <!-- Loading State -->
-                <div v-if="loading" class="flex justify-center items-center py-12">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <!-- Loading State -->
+            <div v-if="loading" class="flex justify-center items-center py-12">
+                <div class="flex items-center space-x-2">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    <span class="text-muted-foreground">Loading dashboard data...</span>
                 </div>
+            </div>
 
-                <!-- Error State -->
-                <div v-else-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                    {{ error }}
-                </div>
+            <!-- Error State -->
+            <Alert v-else-if="error" variant="destructive">
+                <AlertCircle class="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{{ error }}</AlertDescription>
+            </Alert>
 
-                <!-- Dashboard Content -->
-                <div v-else>
-                    <!-- Company Info -->
-                    <Card class="overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                        <CardContent class="p-6 text-white">
-                            <h3 class="text-lg font-semibold mb-4 text-white">{{ company?.name }}</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                    <span class="font-medium">Email:</span> {{ company?.email }}
+            <!-- Dashboard Content -->
+            <div v-else class="space-y-6">
+                <!-- Company Info Card -->
+                <Card v-if="company" class="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+                    <CardContent class="p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-primary">{{ company.name }}</h2>
+                                <p class="text-muted-foreground mt-1">
+                                    {{ company.email }} • {{ company.phone }}
+                                </p>
+                                <p class="text-muted-foreground text-sm">{{ company.address }}</p>
+                            </div>
+                            <div class="hidden md:block">
+                                <Badge variant="secondary" class="text-sm">
+                                    <CheckCircle class="h-3 w-3 mr-1" />
+                                    Active
+                                </Badge>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <!-- Key Metrics -->
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardContent class="p-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                                    <Package class="h-6 w-6 text-blue-600 dark:text-blue-400" />
                                 </div>
-                                <div>
-                                    <span class="font-medium">Phone:</span> {{ company?.phone }}
-                                </div>
-                                <div>
-                                    <span class="font-medium">Address:</span> {{ company?.address }}
-                                </div>
-                                <div>
-                                    <span class="font-medium">Status:</span>
-                                    <span :class="company?.status === 'active' ? 'text-green-600' : 'text-red-600'">
-                                        {{ company?.status }}
-                                    </span>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-muted-foreground">Total Products</p>
+                                    <p class="text-2xl font-bold">{{ stats?.total_products || 0 }}</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <!-- Statistics Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                        <Card class="overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-500">Total Products</div>
-                                        <div class="text-2xl font-semibold">{{ stats?.total_products }}
-                                        </div>
-                                    </div>
+                    <Card>
+                        <CardContent class="p-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                                    <Users class="h-6 w-6 text-green-600 dark:text-green-400" />
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-muted-foreground">Total Customers</p>
+                                    <p class="text-2xl font-bold">{{ stats?.total_customers || 0 }}</p>
                                 </div>
                             </div>
-                        </Card>
+                        </CardContent>
+                    </Card>
 
-                        <Card class="overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-500">Total Customers</div>
-                                        <div class="text-2xl font-semibold">{{ stats?.total_customers }}
-                                        </div>
-                                    </div>
+                    <Card>
+                        <CardContent class="p-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                                    <Truck class="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-muted-foreground">Total Suppliers</p>
+                                    <p class="text-2xl font-bold">{{ stats?.total_suppliers || 0 }}</p>
                                 </div>
                             </div>
-                        </Card>
+                        </CardContent>
+                    </Card>
 
-                        <Card class="overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-500">Total Suppliers</div>
-                                        <div class="text-2xl font-semibold">{{ stats?.total_suppliers }}
-                                        </div>
-                                    </div>
+                    <Card>
+                        <CardContent class="p-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                    <AlertTriangle class="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-muted-foreground">Low Stock Items</p>
+                                    <p class="text-2xl font-bold">{{ stats?.low_stock_products || 0 }}</p>
                                 </div>
                             </div>
-                        </Card>
-
-                        <Card class="overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-500">Low Stock Products</div>
-                                        <div class="text-2xl font-semibold">{{ stats?.low_stock_products
-                                        }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
-
-                    <!-- Charts Section -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <!-- Sales Trend Chart -->
-                        <Card class="overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <h3 class="text-lg font-semibold mb-4">Sales Trend (Last 6 Months)</h3>
-                                <div class="h-64">
-                                    <AreaChart :data="salesChartData" :categories="['sales']" :index="'month'"
-                                        :colors="['blue']" :y-formatter="formatChartCurrency" class="h-full" />
-                                </div>
-                            </div>
-                        </Card>
-
-                        <!-- Inventory Status Chart -->
-                        <Card class="overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <h3 class="text-lg font-semibold mb-4">Inventory Status</h3>
-                                <div class="h-64">
-                                    <AreaChart :data="inventoryChartData" :categories="['count']" :index="'status'"
-                                        :colors="['green', 'yellow', 'red']" class="h-full" />
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
-
-                    <!-- Recent Activity -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Recent Sales Orders -->
-                        <Card class="overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <h3 class="text-lg font-semibold mb-4">Recent Sales Orders</h3>
-
-                                <!-- Sales Orders Chart -->
-                                <div class="h-48 mb-4">
-                                    <AreaChart :data="recentSalesChartData" :categories="['amount']" :index="'order'"
-                                        :colors="['blue']" :y-formatter="formatChartCurrency" :show-legend="false"
-                                        class="h-full" />
-                                </div>
-
-                                <!-- Sales Orders List -->
-                                <div class="space-y-4">
-                                    <div v-for="order in stats?.recent_sales_orders" :key="order.id"
-                                        class="border-b border-gray-200 pb-4 last:border-b-0">
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <div class="font-medium">{{ order.so_number }}</div>
-                                                <div class="text-sm text-gray-500">{{ order.customer?.name }}</div>
-                                                <div class="text-sm text-gray-500">{{ formatDate(order.order_date) }}
-                                                </div>
-                                            </div>
-                                            <div class="text-right">
-                                                <div class="font-medium">{{
-                                                    formatCurrency(order.total_amount) }}
-                                                </div>
-                                                <span :class="getStatusColor(order.status)"
-                                                    class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-                                                    {{ order.status }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-
-                        <!-- Low Stock Products -->
-                        <Card class="overflow-hidden shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                <h3 class="text-lg font-semibold mb-4">Low Stock Products</h3>
-
-                                <!-- Stock Level Chart -->
-                                <div class="h-48 mb-4">
-                                    <AreaChart :data="lowStockChartData" :categories="['stock', 'min_stock']"
-                                        :index="'product'" :colors="['red', 'orange']" :show-legend="true"
-                                        class="h-full" />
-                                </div>
-
-                                <!-- Low Stock Products List -->
-                                <div class="space-y-4">
-                                    <div v-for="product in stats?.low_stock_products_list" :key="product.id"
-                                        class="border-b border-gray-200 pb-4 last:border-b-0">
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <div class="font-medium">{{ product.name }}</div>
-                                                <div class="text-sm text-gray-500">{{ product.category?.name }}</div>
-                                                <div class="text-sm text-gray-500">SKU: {{ product.sku }}</div>
-                                            </div>
-                                            <div class="text-right">
-                                                <div class="font-medium text-red-600">{{ product.stock_quantity }} in
-                                                    stock
-                                                </div>
-                                                <div class="text-sm text-gray-500">Min: {{ product.min_stock_level }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
+
+                <!-- Financial Overview -->
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardContent class="p-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-2 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg">
+                                    <TrendingUp class="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-muted-foreground">Total Sales</p>
+                                    <p class="text-2xl font-bold">{{ formatCurrency(stats?.total_sales || 0) }}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent class="p-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-2 bg-rose-100 dark:bg-rose-900/20 rounded-lg">
+                                    <TrendingDown class="h-6 w-6 text-rose-600 dark:text-rose-400" />
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-muted-foreground">Total Purchases</p>
+                                    <p class="text-2xl font-bold">{{ formatCurrency(stats?.total_purchases || 0) }}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent class="p-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-2 bg-cyan-100 dark:bg-cyan-900/20 rounded-lg">
+                                    <Warehouse class="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-muted-foreground">Inventory Value</p>
+                                    <p class="text-2xl font-bold">{{ formatCurrency(stats?.inventory_value || 0) }}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent class="p-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-2 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg">
+                                    <Calculator class="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-sm font-medium text-muted-foreground">Net Income</p>
+                                    <p class="text-2xl font-bold" :class="getNetIncomeColor()">
+                                        {{ formatCurrency((stats?.total_sales || 0) - (stats?.total_purchases || 0)) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid gap-6 lg:grid-cols-2">
+                    <!-- Sales Trend Chart -->
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Sales Trend (Last 6 Months)</CardTitle>
+                            <CardDescription>
+                                Monthly sales performance overview
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="h-[300px]">
+                                <AreaChart :data="salesChartData" :categories="['sales']" :index="'month'"
+                                    :colors="['hsl(var(--chart-1))']" :y-formatter="formatChartCurrency"
+                                    class="h-full" />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <!-- Inventory Status Chart -->
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Inventory Status</CardTitle>
+                            <CardDescription>
+                                Current inventory levels and alerts
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="h-[300px]">
+                                <AreaChart :data="inventoryChartData" :categories="['count']" :index="'status'"
+                                    :colors="['hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))']"
+                                    class="h-full" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <!-- Recent Activity & Alerts -->
+                <div class="grid gap-6 lg:grid-cols-2">
+                    <!-- Recent Sales Orders -->
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Recent Sales Orders</CardTitle>
+                            <CardDescription>
+                                Latest sales transactions
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="space-y-4">
+                                <div v-for="order in stats?.recent_sales_orders" :key="order.id"
+                                    class="flex items-center space-x-4">
+                                    <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                                        <ShoppingCart class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div class="flex-1 space-y-1">
+                                        <p class="text-sm font-medium leading-none">{{ order.so_number }}</p>
+                                        <p class="text-sm text-muted-foreground">{{ order.customer?.name }}</p>
+                                        <p class="text-xs text-muted-foreground">{{ formatDate(order.order_date) }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium">{{ formatCurrency(order.total_amount) }}</p>
+                                        <Badge :variant="getStatusVariant(order.status)" class="text-xs">
+                                            {{ order.status }}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <div v-if="!stats?.recent_sales_orders?.length" class="text-center py-8">
+                                    <Package class="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                    <p class="text-sm text-muted-foreground">No recent sales orders</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <!-- Low Stock Products -->
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Low Stock Alerts</CardTitle>
+                            <CardDescription>
+                                Products that need reordering
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="space-y-4">
+                                <div v-for="product in stats?.low_stock_products_list" :key="product.id"
+                                    class="flex items-center space-x-4">
+                                    <div class="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                        <AlertTriangle class="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                    </div>
+                                    <div class="flex-1 space-y-1">
+                                        <p class="text-sm font-medium leading-none">{{ product.name }}</p>
+                                        <p class="text-sm text-muted-foreground">{{ product.category?.name }}</p>
+                                        <p class="text-xs text-muted-foreground">SKU: {{ product.sku }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium text-orange-600 dark:text-orange-400">
+                                            {{ product.stock_quantity }} in stock
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">Min: {{ product.min_stock_level }}</p>
+                                    </div>
+                                </div>
+                                <div v-if="!stats?.low_stock_products_list?.length" class="text-center py-8">
+                                    <CheckCircle class="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                    <p class="text-sm text-muted-foreground">All products are well stocked</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <!-- Recent Transactions -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Transactions</CardTitle>
+                        <CardDescription>
+                            Latest business activities
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="space-y-4">
+                            <div v-for="transaction in stats?.recent_transactions" :key="transaction.id"
+                                class="flex items-center space-x-4">
+                                <div class="p-2 rounded-lg" :class="getTransactionIconClass(transaction.type)">
+                                    <component :is="getTransactionIcon(transaction.type)" class="h-4 w-4" />
+                                </div>
+                                <div class="flex-1 space-y-1">
+                                    <p class="text-sm font-medium leading-none">{{ transaction.description }}</p>
+                                    <p class="text-sm text-muted-foreground">
+                                        {{ transaction.type === 'sale' ? transaction.customer : transaction.supplier }}
+                                    </p>
+                                    <p class="text-xs text-muted-foreground">{{ formatDate(transaction.date) }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-medium"
+                                        :class="transaction.type === 'sale' ? 'text-green-600' : 'text-red-600'">
+                                        {{ transaction.type === 'sale' ? '+' : '-' }}{{
+                                        formatCurrency(transaction.amount) }}
+                                    </p>
+                                    <Badge :variant="getStatusVariant(transaction.status)" class="text-xs">
+                                        {{ transaction.status }}
+                                    </Badge>
+                                </div>
+                            </div>
+                            <div v-if="!stats?.recent_transactions?.length" class="text-center py-8">
+                                <Activity class="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                <p class="text-sm text-muted-foreground">No recent transactions</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     </AppLayout>
@@ -246,8 +339,32 @@ import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { DashboardStats, Company, SalesOrder } from '@/types/erp';
 import type { BreadcrumbItemType } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AreaChart } from '@/components/ui/chart-area';
+import {
+    Package,
+    Users,
+    Truck,
+    AlertTriangle,
+    TrendingUp,
+    TrendingDown,
+    Warehouse,
+    Calculator,
+    CheckCircle,
+    ShoppingCart,
+    Download,
+    AlertCircle,
+    Activity
+} from 'lucide-vue-next';
 import apiService from '@/services/api';
 
 const loading = ref<boolean>(true);
@@ -255,46 +372,26 @@ const error = ref<string>('');
 const company = ref<Company | null>(null);
 const stats = ref<DashboardStats | null>(null);
 
-// Chart data
+// Chart data computed from API
 const salesChartData = computed(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const sales = [12000, 19000, 15000, 25000, 22000, 30000]; // Sample data
+    if (!stats.value?.sales_trend) return [];
 
-    return months.map((month, index) => ({
+    return stats.value.sales_trend.months.map((month, index) => ({
         month,
-        sales: sales[index]
+        sales: stats.value.sales_trend.sales[index]
     }));
 });
 
 const inventoryChartData = computed(() => {
     const inStock = stats.value?.total_products ? stats.value.total_products - (stats.value.low_stock_products || 0) : 0;
     const lowStock = stats.value?.low_stock_products || 0;
-    const outOfStock = 5; // Sample data
+    const outOfStock = 0; // Could be calculated from API if needed
 
     return [
         { status: 'In Stock', count: inStock },
         { status: 'Low Stock', count: lowStock },
         { status: 'Out of Stock', count: outOfStock }
     ];
-});
-
-const recentSalesChartData = computed(() => {
-    if (!stats.value?.recent_sales_orders) return [];
-
-    return stats.value.recent_sales_orders.map((order, index) => ({
-        order: `SO-${order.so_number}`,
-        amount: order.total_amount
-    }));
-});
-
-const lowStockChartData = computed(() => {
-    if (!stats.value?.low_stock_products_list) return [];
-
-    return stats.value.low_stock_products_list.map((product, index) => ({
-        product: product.name.substring(0, 15) + (product.name.length > 15 ? '...' : ''),
-        stock: product.stock_quantity,
-        min_stock: product.min_stock_level
-    }));
 });
 
 const loadDashboard = async (): Promise<void> => {
@@ -312,9 +409,9 @@ const loadDashboard = async (): Promise<void> => {
 };
 
 const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'IDR'
     }).format(amount);
 };
 
@@ -333,15 +430,30 @@ const formatDate = (date: string): string => {
     });
 };
 
-const getStatusColor = (status: SalesOrder['status']): string => {
-    const colors: Record<SalesOrder['status'], string> = {
-        'draft': 'bg-gray-100',
-        'confirmed': 'bg-blue-100 text-blue-800',
-        'shipped': 'bg-yellow-100 text-yellow-800',
-        'delivered': 'bg-green-100 text-green-800',
-        'cancelled': 'bg-red-100 text-red-800'
+const getStatusVariant = (status: string) => {
+    const variants: Record<string, string> = {
+        'draft': 'secondary',
+        'confirmed': 'default',
+        'shipped': 'default',
+        'delivered': 'default',
+        'cancelled': 'destructive'
     };
-    return colors[status] || 'bg-gray-100';
+    return variants[status] || 'secondary';
+};
+
+const getNetIncomeColor = (): string => {
+    const netIncome = (stats.value?.total_sales || 0) - (stats.value?.total_purchases || 0);
+    return netIncome >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
+};
+
+const getTransactionIcon = (type: string) => {
+    return type === 'sale' ? ShoppingCart : Truck;
+};
+
+const getTransactionIconClass = (type: string): string => {
+    return type === 'sale'
+        ? 'bg-green-100 dark:bg-green-900/20'
+        : 'bg-blue-100 dark:bg-blue-900/20';
 };
 
 const breadcrumbs: BreadcrumbItemType[] = [

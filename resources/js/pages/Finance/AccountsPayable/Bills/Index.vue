@@ -1,33 +1,107 @@
 <template>
 
-    <Head title="Bills" />
+    <Head title="Bills - Accounts Payable" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="font-semibold text-xl leading-tight">
-                    Bills (Accounts Payable)
-                </h2>
-                <Link :href="route('finance.accounts-payable.bills.create')">
-                <Button>
-                    <Plus class="w-4 h-4 mr-2" />
-                    Add Bill
-                </Button>
-                </Link>
+        <div class="p-6 space-y-6">
+            <!-- Header Section -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight">Bills</h1>
+                    <p class="text-muted-foreground mt-1">
+                        Manage supplier bills and accounts payable
+                    </p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <Button variant="outline" size="sm">
+                        <Download class="h-4 w-4 mr-2" />
+                        Export
+                    </Button>
+                    <Link :href="route('finance.accounts-payable.bills.create')">
+                    <Button>
+                        <Plus class="w-4 h-4 mr-2" />
+                        Create Bill
+                    </Button>
+                    </Link>
+                </div>
             </div>
 
-            <div class="overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <!-- Search and Filters -->
-                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+            <!-- Summary Cards -->
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                                <FileText class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Total Bills</p>
+                                <p class="text-2xl font-bold">{{ summary.total_bills }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                                <TrendingDown class="h-6 w-6 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Total Amount</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(summary.total_amount) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                <AlertTriangle class="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Overdue Amount</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(summary.overdue_amount) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                                <CheckCircle class="h-6 w-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Paid Amount</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(summary.paid_amount) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <!-- Search and Filters -->
+            <Card>
+                <CardContent class="p-6">
+                    <div class="flex flex-col lg:flex-row gap-4">
                         <div class="flex-1">
-                            <Input v-model="searchQuery" placeholder="Search bills..." class="w-full"
-                                @input="debouncedSearch" />
+                            <div class="relative">
+                                <Search
+                                    class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input v-model="filters.search"
+                                    placeholder="Search bills by number, supplier, or description..." class="pl-10"
+                                    @input="debouncedSearch" />
+                            </div>
                         </div>
                         <div class="flex gap-2">
-                            <Select v-model="statusFilter">
+                            <Select v-model="filters.status" @update:model-value="fetchBills">
                                 <SelectTrigger class="w-[180px]">
-                                    <SelectValue placeholder="Status" />
+                                    <SelectValue placeholder="All Status" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Status</SelectItem>
@@ -38,11 +112,26 @@
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Input type="date" v-model="dateFilter" class="w-[180px]" />
+                            <Input type="date" v-model="filters.date_from" @change="fetchBills" class="w-[180px]" />
+                            <Input type="date" v-model="filters.date_to" @change="fetchBills" class="w-[180px]" />
+                            <Button variant="outline" @click="clearFilters">
+                                <X class="h-4 w-4 mr-2" />
+                                Clear
+                            </Button>
                         </div>
                     </div>
+                </CardContent>
+            </Card>
 
-                    <!-- Bills Table -->
+            <!-- Bills Table -->
+            <Card>
+                <CardHeader>
+                    <CardTitle>Bills</CardTitle>
+                    <CardDescription>
+                        View and manage all supplier bills
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
                     <div class="rounded-md border">
                         <Table>
                             <TableHeader>
@@ -51,62 +140,75 @@
                                     <TableHead>Supplier</TableHead>
                                     <TableHead>Bill Date</TableHead>
                                     <TableHead>Due Date</TableHead>
-                                    <TableHead>Total Amount</TableHead>
-                                    <TableHead>Paid Amount</TableHead>
-                                    <TableHead>Balance</TableHead>
+                                    <TableHead class="text-right">Amount</TableHead>
+                                    <TableHead class="text-right">Paid</TableHead>
+                                    <TableHead class="text-right">Balance</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead class="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 <TableRow v-if="loading">
-                                    <TableCell colspan="9" class="text-center py-8">
-                                        <div class="flex items-center justify-center">
-                                            <Loader2 class="w-6 h-6 animate-spin mr-2" />
-                                            Loading...
+                                    <TableCell colspan="9" class="text-center py-12">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <Loader2 class="w-6 h-6 animate-spin" />
+                                            <span class="text-muted-foreground">Loading bills...</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                                 <TableRow v-else-if="bills.length === 0">
-                                    <TableCell colspan="9" class="text-center py-8 text-gray-500">
-                                        No bills found
+                                    <TableCell colspan="9" class="text-center py-12">
+                                        <div class="flex flex-col items-center space-y-2">
+                                            <FileText class="h-12 w-12 text-muted-foreground" />
+                                            <div class="text-center">
+                                                <h3 class="text-lg font-medium">No bills found</h3>
+                                                <p class="text-muted-foreground">
+                                                    {{ filters.search || filters.status !== 'all' || filters.date_from
+                                                        || filters.date_to
+                                                        ? 'Try adjusting your search or filters'
+                                                        : 'Get started by creating your first bill' }}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
-                                <TableRow v-else v-for="bill in bills.filter((b: any) => b && b.id)" :key="bill.id">
+                                <TableRow v-else v-for="bill in bills" :key="bill.id">
                                     <TableCell>
-                                        <div class="font-mono text-sm">{{ bill.bill_number }}</div>
+                                        <div class="font-mono text-sm font-medium">{{ bill.bill_number }}</div>
                                     </TableCell>
                                     <TableCell>
-                                        <div class="text-sm">
+                                        <div class="space-y-1">
                                             <div class="font-medium">{{ bill.supplier?.name || 'N/A' }}</div>
+                                            <div class="text-sm text-muted-foreground">{{ bill.supplier?.email || 'N/A'
+                                                }}</div>
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div class="text-sm">{{ formatDate(bill.bill_date) }}</div>
                                     </TableCell>
                                     <TableCell>
-                                        <div class="text-sm" :class="{ 'text-red-600 font-medium': bill.is_overdue }">
+                                        <div class="text-sm"
+                                            :class="isOverdue(bill.due_date) ? 'text-red-600 dark:text-red-400' : ''">
                                             {{ formatDate(bill.due_date) }}
                                         </div>
                                     </TableCell>
-                                    <TableCell>
-                                        <div class="text-sm font-medium">
-                                            {{ formatCurrency(bill.total_amount || 0) }}
+                                    <TableCell class="text-right">
+                                        <div class="font-medium">{{ formatCurrency(bill.total_amount) }}</div>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <div class="font-medium text-green-600 dark:text-green-400">
+                                            {{ formatCurrency(bill.paid_amount) }}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <div class="font-medium"
+                                            :class="bill.balance_amount > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                                            {{ formatCurrency(bill.balance_amount) }}
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div class="text-sm font-medium text-green-600">
-                                            {{ formatCurrency(bill.paid_amount || 0) }}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div class="text-sm font-medium text-red-600">
-                                            {{ formatCurrency(bill.balance_amount || 0) }}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge :variant="getStatusVariant(bill.status)">
-                                            {{ getStatusLabel(bill.status) }}
+                                        <Badge :variant="getStatusVariant(bill.status)" class="capitalize">
+                                            {{ bill.status }}
                                         </Badge>
                                     </TableCell>
                                     <TableCell class="text-right">
@@ -120,20 +222,19 @@
                                                 <DropdownMenuItem as-child>
                                                     <Link :href="route('finance.accounts-payable.bills.show', bill.id)">
                                                     <Eye class="w-4 h-4 mr-2" />
-                                                    View
+                                                    View Details
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem as-child v-if="bill.status === 'draft'">
                                                     <Link :href="route('finance.accounts-payable.bills.edit', bill.id)">
                                                     <Edit class="w-4 h-4 mr-2" />
-                                                    Edit
+                                                    Edit Bill
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem @click="deleteBill(bill.id)"
-                                                    v-if="bill.status === 'draft'" class="text-red-600">
+                                                <DropdownMenuItem @click="deleteBill(bill.id)" class="text-destructive">
                                                     <Trash2 class="w-4 h-4 mr-2" />
-                                                    Delete
+                                                    Delete Bill
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -144,42 +245,70 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div v-if="pagination && pagination.meta && pagination.meta.last_page > 1" class="mt-6">
-                        <DataPagination :current-page="pagination.meta.current_page"
-                            :total-pages="pagination.meta.last_page" :total-items="pagination.meta.total"
-                            :per-page="pagination.meta.per_page" @page-change="changePage" />
+                    <div v-if="pagination && pagination.meta && pagination.meta.last_page > 1"
+                        class="flex items-center justify-between mt-6">
+                        <div class="text-sm text-muted-foreground">
+                            Showing {{ pagination.meta.from }} to {{ pagination.meta.to }} of {{ pagination.meta.total
+                            }} results
+                        </div>
+                        <div class="flex gap-2">
+                            <Button variant="outline" size="sm" :disabled="pagination.meta.current_page === 1"
+                                @click="changePage(pagination.meta.current_page - 1)">
+                                <ChevronLeft class="h-4 w-4 mr-1" />
+                                Previous
+                            </Button>
+                            <Button variant="outline" size="sm"
+                                :disabled="pagination.meta.current_page === pagination.meta.last_page"
+                                @click="changePage(pagination.meta.current_page + 1)">
+                                Next
+                                <ChevronRight class="h-4 w-4 ml-1" />
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, MoreHorizontal, Eye, Edit, Trash2, Loader2 } from 'lucide-vue-next'
-import { DataPagination } from '@/components/ui/pagination'
+import {
+    Plus,
+    MoreHorizontal,
+    Eye,
+    Edit,
+    Trash2,
+    Loader2,
+    Search,
+    X,
+    FileText,
+    TrendingDown,
+    AlertTriangle,
+    CheckCircle,
+    Download,
+    ChevronLeft,
+    ChevronRight
+} from 'lucide-vue-next'
 import { apiService } from '@/services/api'
 import type { Bill, PaginatedData } from '@/types/erp'
 import type { BreadcrumbItemType } from '@/types'
 
-interface Props {
-    bills?: Bill[] | any
-    pagination?: PaginatedData<Bill>
+interface BillSummary {
+    total_bills: number
+    total_amount: number
+    overdue_amount: number
+    paid_amount: number
 }
-
-const props = withDefaults(defineProps<Props>(), {
-    bills: () => [],
-    pagination: undefined
-})
 
 const breadcrumbs: BreadcrumbItemType[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -188,125 +317,101 @@ const breadcrumbs: BreadcrumbItemType[] = [
     { title: 'Bills', href: '/finance/accounts-payable/bills' }
 ]
 
-const bills = ref<Bill[]>([])
-const pagination = ref<PaginatedData<Bill> | undefined>(props.pagination)
 const loading = ref(false)
-const searchQuery = ref('')
-const statusFilter = ref('all')
-const dateFilter = ref('')
+const bills = ref<Bill[]>([])
+const pagination = ref<PaginatedData<Bill> | null>(null)
 
-let searchTimeout: number | null = null
+const summary = ref<BillSummary>({
+    total_bills: 0,
+    total_amount: 0,
+    overdue_amount: 0,
+    paid_amount: 0
+})
+
+const filters = ref({
+    search: '',
+    status: 'all',
+    date_from: '',
+    date_to: ''
+})
 
 const debouncedSearch = () => {
-    if (searchTimeout) {
-        clearTimeout(searchTimeout)
-    }
-    searchTimeout = setTimeout(() => {
-        fetchBills()
-    }, 300)
+    // Implement debounced search if needed
+}
+
+const clearFilters = () => {
+    filters.value.search = ''
+    filters.value.status = 'all'
+    filters.value.date_from = ''
+    filters.value.date_to = ''
 }
 
 const fetchBills = async () => {
     loading.value = true
     try {
-        const params: any = {}
-        if (searchQuery.value) params.search = searchQuery.value
-        if (statusFilter.value && statusFilter.value !== 'all') params.status = statusFilter.value
-        if (dateFilter.value) params.date = dateFilter.value
-
-        const response = await apiService.getBills(params)
-        console.log('Bills API Response:', response)
-
-        if (response && response.data && Array.isArray(response.data)) {
-            bills.value = response.data.filter(bill => bill && typeof bill === 'object')
-        } else {
-            bills.value = []
-        }
-
-        if (response && response.meta) {
-            pagination.value = {
-                data: response.data || [],
-                links: response.links || [],
-                meta: response.meta
-            }
+        const response = await apiService.getBills(filters.value)
+        bills.value = response.data || []
+        pagination.value = response.pagination || null
+        summary.value = response.summary || {
+            total_bills: 0,
+            total_amount: 0,
+            overdue_amount: 0,
+            paid_amount: 0
         }
     } catch (error) {
         console.error('Error fetching bills:', error)
         bills.value = []
-        pagination.value = undefined
     } finally {
         loading.value = false
     }
 }
 
-const changePage = (page: number) => {
-    const params = new URLSearchParams()
-    if (searchQuery.value) params.append('search', searchQuery.value)
-    if (statusFilter.value && statusFilter.value !== 'all') params.append('status', statusFilter.value)
-    if (dateFilter.value) params.append('date', dateFilter.value)
-    params.append('page', page.toString())
-
-    router.get(`/finance/accounts-payable/bills?${params.toString()}`)
-}
-
 const deleteBill = async (id: number) => {
-    if (!id) return
-
     if (confirm('Are you sure you want to delete this bill?')) {
         try {
             await apiService.deleteBill(id)
-            await fetchBills()
+            router.reload()
         } catch (error) {
             console.error('Error deleting bill:', error)
         }
     }
 }
 
-const formatDate = (dateString: string): string => {
-    if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleDateString('en-US', {
+const changePage = (page: number) => {
+    router.get(route('finance.accounts-payable.bills.index'), { page }, { preserveState: true })
+}
+
+const getStatusVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
+    const variants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+        'draft': 'secondary',
+        'received': 'default',
+        'paid': 'default',
+        'overdue': 'destructive',
+        'cancelled': 'outline'
+    }
+    return variants[status] || 'secondary'
+}
+
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+    }).format(amount)
+}
+
+const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('id-ID', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
     })
 }
 
-const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(amount)
+const isOverdue = (dueDate: string) => {
+    return new Date(dueDate) < new Date()
 }
-
-const getStatusLabel = (status: string): string => {
-    const labels: Record<string, string> = {
-        'draft': 'Draft',
-        'received': 'Received',
-        'paid': 'Paid',
-        'overdue': 'Overdue',
-        'cancelled': 'Cancelled'
-    }
-    return labels[status] || status || 'N/A'
-}
-
-const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
-        'draft': 'secondary',
-        'received': 'default',
-        'paid': 'default',
-        'overdue': 'destructive',
-        'cancelled': 'destructive'
-    }
-    return variants[status] || 'secondary'
-}
-
-watch([statusFilter, dateFilter], () => {
-    fetchBills()
-})
 
 onMounted(() => {
-    if (bills.value.length === 0) {
-        fetchBills()
-    }
+    fetchBills()
 })
 </script>

@@ -105,7 +105,7 @@
                                     {{ bom.quantity_per_unit }} {{ bom.unit }} per unit
                                 </p>
                                 <div class="flex items-center gap-4 text-sm text-muted-foreground">
-                                    <span>Total Cost: ${{ formatCurrency(bom.total_cost) }}</span>
+                                                                                <span>Total Cost: {{ formatCurrency(bom.total_cost) }}</span>
                                     <span>{{ bom.items?.length || 0 }} components</span>
                                     <span>Created: {{ formatDate(bom.created_at) }}</span>
                                 </div>

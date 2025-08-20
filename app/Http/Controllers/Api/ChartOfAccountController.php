@@ -16,8 +16,16 @@ class ChartOfAccountController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        // Check if user has company_id
+        $user = Auth::user();
+        if (!$user || !$user->company_id) {
+            return response()->json([
+                'message' => 'User not associated with any company'
+            ], 400);
+        }
+
         $query = ChartOfAccount::with(['parent', 'children', 'created_by_user'])
-            ->where('company_id', Auth::user()->company_id);
+            ->where('company_id', $user->company_id);
 
         // Search
         if ($request->has('search') && $request->search) {
@@ -49,8 +57,16 @@ class ChartOfAccountController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Check if user has company_id
+        $user = Auth::user();
+        if (!$user || !$user->company_id) {
+            return response()->json([
+                'message' => 'User not associated with any company'
+            ], 400);
+        }
+
         $validator = Validator::make($request->all(), [
-            'account_code' => 'required|string|max:50|unique:chart_of_accounts,account_code,NULL,id,company_id,' . Auth::user()->company_id,
+            'account_code' => 'required|string|max:50|unique:chart_of_accounts,account_code,NULL,id,company_id,' . $user->company_id,
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:asset,liability,equity,revenue,expense',
@@ -66,24 +82,31 @@ class ChartOfAccountController extends Controller
             ], 422);
         }
 
-        $account = ChartOfAccount::create([
-            'company_id' => Auth::user()->company_id,
-            'account_code' => $request->account_code,
-            'name' => $request->name,
-            'description' => $request->description,
-            'type' => $request->type,
-            'parent_id' => $request->parent_id ?: null,
-            'balance' => $request->balance ?: 0,
-            'status' => $request->status,
-            'created_by' => Auth::id(),
-        ]);
+        try {
+            $account = ChartOfAccount::create([
+                'company_id' => $user->company_id,
+                'account_code' => $request->account_code,
+                'name' => $request->name,
+                'description' => $request->description,
+                'type' => $request->type,
+                'parent_id' => $request->parent_id ?: null,
+                'balance' => $request->balance ?: 0,
+                'status' => $request->status,
+                'created_by' => $user->id,
+            ]);
 
-        $account->load(['parent', 'children', 'created_by_user']);
+            $account->load(['parent', 'children', 'created_by_user']);
 
-        return response()->json([
-            'message' => 'Chart of account created successfully',
-            'chart_of_account' => $account
-        ], 201);
+            return response()->json([
+                'message' => 'Chart of account created successfully',
+                'chart_of_account' => $account
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error creating chart of account',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -91,8 +114,16 @@ class ChartOfAccountController extends Controller
      */
     public function show(ChartOfAccount $chartOfAccount): JsonResponse
     {
+        // Check if user has company_id
+        $user = Auth::user();
+        if (!$user || !$user->company_id) {
+            return response()->json([
+                'message' => 'User not associated with any company'
+            ], 400);
+        }
+
         // Check if the account belongs to the user's company
-        if ($chartOfAccount->company_id !== Auth::user()->company_id) {
+        if ($chartOfAccount->company_id !== $user->company_id) {
             return response()->json(['message' => 'Account not found'], 404);
         }
 
@@ -108,13 +139,21 @@ class ChartOfAccountController extends Controller
      */
     public function update(Request $request, ChartOfAccount $chartOfAccount): JsonResponse
     {
+        // Check if user has company_id
+        $user = Auth::user();
+        if (!$user || !$user->company_id) {
+            return response()->json([
+                'message' => 'User not associated with any company'
+            ], 400);
+        }
+
         // Check if the account belongs to the user's company
-        if ($chartOfAccount->company_id !== Auth::user()->company_id) {
+        if ($chartOfAccount->company_id !== $user->company_id) {
             return response()->json(['message' => 'Account not found'], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'account_code' => 'required|string|max:50|unique:chart_of_accounts,account_code,' . $chartOfAccount->id . ',id,company_id,' . Auth::user()->company_id,
+            'account_code' => 'required|string|max:50|unique:chart_of_accounts,account_code,' . $chartOfAccount->id . ',id,company_id,' . $user->company_id,
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:asset,liability,equity,revenue,expense',
@@ -159,8 +198,16 @@ class ChartOfAccountController extends Controller
      */
     public function destroy(ChartOfAccount $chartOfAccount): JsonResponse
     {
+        // Check if user has company_id
+        $user = Auth::user();
+        if (!$user || !$user->company_id) {
+            return response()->json([
+                'message' => 'User not associated with any company'
+            ], 400);
+        }
+
         // Check if the account belongs to the user's company
-        if ($chartOfAccount->company_id !== Auth::user()->company_id) {
+        if ($chartOfAccount->company_id !== $user->company_id) {
             return response()->json(['message' => 'Account not found'], 404);
         }
 
@@ -183,5 +230,86 @@ class ChartOfAccountController extends Controller
         return response()->json([
             'message' => 'Chart of account deleted successfully'
         ]);
+    }
+
+    /**
+     * Export chart of accounts to CSV
+     */
+    public function export(Request $request): \Symfony\Component\HttpFoundation\Response
+    {
+        // Check if user has company_id
+        $user = Auth::user();
+        if (!$user || !$user->company_id) {
+            return response()->json([
+                'message' => 'User not associated with any company'
+            ], 400);
+        }
+
+        $query = ChartOfAccount::with(['parent', 'created_by_user'])
+            ->where('company_id', $user->company_id);
+
+        // Apply filters if provided
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('account_code', 'ilike', "%{$search}%")
+                  ->orWhere('name', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%");
+            });
+        }
+
+        if ($request->has('type') && $request->type && $request->type !== 'all') {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->has('status') && $request->status && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        $accounts = $query->orderBy('account_code')->get();
+
+        // Create CSV content
+        $fileName = 'chart_of_accounts_' . date('Y-m-d_H-i-s') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ];
+
+        $callback = function() use ($accounts) {
+            $file = fopen('php://output', 'w');
+            
+            // Add CSV headers
+            fputcsv($file, [
+                'Account Code',
+                'Account Name', 
+                'Type',
+                'Parent Account',
+                'Description',
+                'Balance',
+                'Status',
+                'Created By',
+                'Created At'
+            ]);
+
+            // Add data rows
+            foreach ($accounts as $account) {
+                fputcsv($file, [
+                    $account->account_code,
+                    $account->name,
+                    ucfirst($account->type),
+                    $account->parent ? $account->parent->name : 'Root Account',
+                    $account->description ?? '',
+                    number_format($account->balance ?? 0, 2),
+                    ucfirst($account->status),
+                    $account->created_by_user ? $account->created_by_user->name : '',
+                    $account->created_at
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

@@ -1,294 +1,335 @@
 <template>
-    <AppLayout title="Invoices">
-        <template #header>
+
+    <Head title="Invoices - Accounts Receivable" />
+
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div class="p-6 space-y-6">
+            <!-- Header Section -->
             <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-xl leading-tight">
-                    Invoices (Accounts Receivable)
-                </h2>
-                <Link :href="route('finance.accounts-receivable.invoices.create')"
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
-                <Plus class="w-4 h-4 mr-2" />
-                Create Invoice
-                </Link>
-            </div>
-        </template>
-
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <!-- Filters -->
-                <div class="overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div>
-                                <Label for="search">Search</Label>
-                                <Input id="search" v-model="filters.search" placeholder="Invoice number, customer..."
-                                    @input="debouncedSearch" class="mt-1" />
-                            </div>
-
-                            <div>
-                                <Label for="status_filter">Status</Label>
-                                <Select v-model="filters.status" @update:model-value="fetchInvoices">
-                                    <SelectTrigger class="mt-1">
-                                        <SelectValue placeholder="All Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Status</SelectItem>
-                                        <SelectItem value="draft">Draft</SelectItem>
-                                        <SelectItem value="sent">Sent</SelectItem>
-                                        <SelectItem value="paid">Paid</SelectItem>
-                                        <SelectItem value="overdue">Overdue</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div>
-                                <Label for="date_from">Date From</Label>
-                                <Input id="date_from" v-model="filters.date_from" type="date" @change="fetchInvoices"
-                                    class="mt-1" />
-                            </div>
-
-                            <div>
-                                <Label for="date_to">Date To</Label>
-                                <Input id="date_to" v-model="filters.date_to" type="date" @change="fetchInvoices"
-                                    class="mt-1" />
-                            </div>
-                        </div>
-                    </div>
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight">Invoices</h1>
+                    <p class="text-muted-foreground mt-1">
+                        Manage customer invoices and accounts receivable
+                    </p>
                 </div>
-
-                <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                    <div class="overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500">Total Invoices</p>
-                                    <p class="text-lg font-semibold">{{ summary.total_invoices }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500">Total Amount</p>
-                                    <p class="text-lg font-semibold">{{
-                                        formatCurrency(summary.total_amount) }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500">Outstanding</p>
-                                    <p class="text-lg font-semibold">{{
-                                        formatCurrency(summary.outstanding_amount)
-                                    }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z">
-                                            </path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500">Overdue</p>
-                                    <p class="text-lg font-semibold">{{
-                                        formatCurrency(summary.overdue_amount) }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Invoices Table -->
-                <div class="overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Invoice #</TableHead>
-                                        <TableHead>Customer</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Due Date</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead class="text-right">Total Amount</TableHead>
-                                        <TableHead class="text-right">Paid Amount</TableHead>
-                                        <TableHead class="text-right">Balance</TableHead>
-                                        <TableHead>Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow v-for="invoice in invoices" :key="invoice.id">
-                                        <TableCell class="font-medium">{{ invoice.invoice_number }}</TableCell>
-                                        <TableCell>{{ invoice.customer?.name || 'N/A' }}</TableCell>
-                                        <TableCell>{{ formatDate(invoice.invoice_date) }}</TableCell>
-                                        <TableCell>
-                                            <span :class="isInvoiceOverdue(invoice) ? 'text-red-600 font-medium' : ''">
-                                                {{ formatDate(invoice.due_date) }}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge :variant="getStatusVariant(invoice.status)">
-                                                {{ getStatusLabel(invoice.status) }}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell class="text-right">{{ formatCurrency(invoice.total_amount) }}
-                                        </TableCell>
-                                        <TableCell class="text-right">{{ formatCurrency(invoice.paid_amount) }}
-                                        </TableCell>
-                                        <TableCell class="text-right font-semibold">{{
-                                            formatCurrency(invoice.balance_amount) }}
-                                        </TableCell>
-                                        <TableCell>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" class="h-8 w-8 p-0">
-                                                        <MoreHorizontal class="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem @click="viewInvoice(invoice.id)">
-                                                        <Eye class="mr-2 h-4 w-4" />
-                                                        View
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem @click="editInvoice(invoice.id)"
-                                                        v-if="invoice.status === 'draft'">
-                                                        <Edit class="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem @click="recordPayment(invoice.id)"
-                                                        v-if="invoice.balance_amount > 0">
-                                                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor"
-                                                            viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1">
-                                                            </path>
-                                                        </svg>
-                                                        Record Payment
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem @click="deleteInvoice(invoice.id)"
-                                                        v-if="invoice.status === 'draft'" class="text-red-600">
-                                                        <Trash2 class="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <!-- Pagination -->
-                        <div v-if="pagination" class="flex items-center justify-between mt-6">
-                            <div class="text-sm text-gray-700">
-                                Showing {{ pagination.meta.from }} to {{ pagination.meta.to }} of {{
-                                    pagination.meta.total }}
-                                results
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <Button :disabled="pagination.meta.current_page === 1"
-                                    @click="changePage(pagination.meta.current_page - 1)" variant="outline" size="sm">
-                                    Previous
-                                </Button>
-                                <span class="text-sm text-gray-700">
-                                    Page {{ pagination.meta.current_page }} of {{ pagination.meta.last_page }}
-                                </span>
-                                <Button :disabled="pagination.meta.current_page === pagination.meta.last_page"
-                                    @click="changePage(pagination.meta.current_page + 1)" variant="outline" size="sm">
-                                    Next
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="flex items-center space-x-2">
+                    <Button variant="outline" size="sm">
+                        <Download class="h-4 w-4 mr-2" />
+                        Export
+                    </Button>
+                    <Link :href="route('finance.accounts-receivable.invoices.create')">
+                    <Button>
+                        <Plus class="w-4 h-4 mr-2" />
+                        Create Invoice
+                    </Button>
+                    </Link>
                 </div>
             </div>
+
+            <!-- Summary Cards -->
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                                <FileText class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Total Invoices</p>
+                                <p class="text-2xl font-bold">{{ summary.total_invoices }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                                <TrendingUp class="h-6 w-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Total Amount</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(summary.total_amount) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                <AlertTriangle class="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Overdue Amount</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(summary.overdue_amount) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                                <CheckCircle class="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Paid Amount</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(summary.paid_amount) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <!-- Search and Filters -->
+            <Card>
+                <CardContent class="p-6">
+                    <div class="flex flex-col lg:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <Search
+                                    class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input v-model="filters.search"
+                                    placeholder="Search invoices by number, customer, or description..." class="pl-10"
+                                    @input="debouncedSearch" />
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <Select v-model="filters.status" @update:model-value="fetchInvoices">
+                                <SelectTrigger class="w-[180px]">
+                                    <SelectValue placeholder="All Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                    <SelectItem value="sent">Sent</SelectItem>
+                                    <SelectItem value="paid">Paid</SelectItem>
+                                    <SelectItem value="overdue">Overdue</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Input type="date" v-model="filters.date_from" @change="fetchInvoices" class="w-[180px]" />
+                            <Input type="date" v-model="filters.date_to" @change="fetchInvoices" class="w-[180px]" />
+                            <Button variant="outline" @click="clearFilters">
+                                <X class="h-4 w-4 mr-2" />
+                                Clear
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Invoices Table -->
+            <Card>
+                <CardHeader>
+                    <CardTitle>Invoices</CardTitle>
+                    <CardDescription>
+                        View and manage all customer invoices
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div class="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Invoice Number</TableHead>
+                                    <TableHead>Customer</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Due Date</TableHead>
+                                    <TableHead class="text-right">Amount</TableHead>
+                                    <TableHead class="text-right">Paid</TableHead>
+                                    <TableHead class="text-right">Balance</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead class="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-if="loading">
+                                    <TableCell colspan="9" class="text-center py-12">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <Loader2 class="w-6 h-6 animate-spin" />
+                                            <span class="text-muted-foreground">Loading invoices...</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow v-else-if="invoices.length === 0">
+                                    <TableCell colspan="9" class="text-center py-12">
+                                        <div class="flex flex-col items-center space-y-2">
+                                            <FileText class="h-12 w-12 text-muted-foreground" />
+                                            <div class="text-center">
+                                                <h3 class="text-lg font-medium">No invoices found</h3>
+                                                <p class="text-muted-foreground">
+                                                    {{ filters.search || filters.status !== 'all' || filters.date_from
+                                                        || filters.date_to
+                                                        ? 'Try adjusting your search or filters'
+                                                        : 'Get started by creating your first invoice' }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow v-else v-for="invoice in invoices" :key="invoice.id">
+                                    <TableCell>
+                                        <div class="font-mono text-sm font-medium">{{ invoice.invoice_number }}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div class="space-y-1">
+                                            <div class="font-medium">{{ invoice.customer?.name || 'N/A' }}</div>
+                                            <div class="text-sm text-muted-foreground">{{ invoice.customer?.email ||
+                                                'N/A' }}</div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div class="text-sm">{{ formatDate(invoice.invoice_date) }}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div class="text-sm"
+                                            :class="isOverdue(invoice.due_date) ? 'text-red-600 dark:text-red-400' : ''">
+                                            {{ formatDate(invoice.due_date) }}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <div class="font-medium">{{ formatCurrency(invoice.total_amount) }}</div>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <div class="font-medium text-green-600 dark:text-green-400">
+                                            {{ formatCurrency(invoice.paid_amount) }}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <div class="font-medium"
+                                            :class="invoice.balance_amount > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                                            {{ formatCurrency(invoice.balance_amount) }}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge :variant="getStatusVariant(invoice.status)" class="capitalize">
+                                            {{ invoice.status }}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button variant="ghost" class="h-8 w-8 p-0">
+                                                    <MoreHorizontal class="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem as-child>
+                                                    <Link
+                                                        :href="route('finance.accounts-receivable.invoices.show', invoice.id)">
+                                                    <Eye class="w-4 h-4 mr-2" />
+                                                    View Details
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem as-child v-if="invoice.status === 'draft'">
+                                                    <Link
+                                                        :href="route('finance.accounts-receivable.invoices.edit', invoice.id)">
+                                                    <Edit class="w-4 h-4 mr-2" />
+                                                    Edit Invoice
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem @click="deleteInvoice(invoice.id)"
+                                                    class="text-destructive">
+                                                    <Trash2 class="w-4 h-4 mr-2" />
+                                                    Delete Invoice
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div v-if="pagination && pagination.meta && pagination.meta.last_page > 1"
+                        class="flex items-center justify-between mt-6">
+                        <div class="text-sm text-muted-foreground">
+                            Showing {{ pagination.meta.from }} to {{ pagination.meta.to }} of {{ pagination.meta.total
+                            }} results
+                        </div>
+                        <div class="flex gap-2">
+                            <Button variant="outline" size="sm" :disabled="pagination.meta.current_page === 1"
+                                @click="changePage(pagination.meta.current_page - 1)">
+                                <ChevronLeft class="h-4 w-4 mr-1" />
+                                Previous
+                            </Button>
+                            <Button variant="outline" size="sm"
+                                :disabled="pagination.meta.current_page === pagination.meta.last_page"
+                                @click="changePage(pagination.meta.current_page + 1)">
+                                Next
+                                <ChevronRight class="h-4 w-4 ml-1" />
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { ref, onMounted, computed } from 'vue'
+import { Head, Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Plus, MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-vue-next'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+    Plus,
+    MoreHorizontal,
+    Eye,
+    Edit,
+    Trash2,
+    Loader2,
+    Search,
+    X,
+    FileText,
+    TrendingUp,
+    AlertTriangle,
+    CheckCircle,
+    Download,
+    ChevronLeft,
+    ChevronRight
+} from 'lucide-vue-next'
 import { apiService } from '@/services/api'
-import type { Invoice } from '@/types/erp'
+import type { Invoice, PaginatedData } from '@/types/erp'
+import type { BreadcrumbItemType } from '@/types'
 
-interface Summary {
+interface InvoiceSummary {
     total_invoices: number
     total_amount: number
-    outstanding_amount: number
     overdue_amount: number
+    paid_amount: number
 }
 
+const breadcrumbs: BreadcrumbItemType[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Finance', href: '/finance' },
+    { title: 'Accounts Receivable', href: '/finance/accounts-receivable' },
+    { title: 'Invoices', href: '/finance/accounts-receivable/invoices' }
+]
+
+const loading = ref(false)
 const invoices = ref<Invoice[]>([])
-const pagination = ref<any>(null)
-const summary = ref<Summary>({
+const pagination = ref<PaginatedData<Invoice> | null>(null)
+
+const summary = ref<InvoiceSummary>({
     total_invoices: 0,
     total_amount: 0,
-    outstanding_amount: 0,
-    overdue_amount: 0
+    overdue_amount: 0,
+    paid_amount: 0
 })
-const loading = ref(false)
 
 const filters = ref({
     search: '',
@@ -296,6 +337,63 @@ const filters = ref({
     date_from: '',
     date_to: ''
 })
+
+const debouncedSearch = () => {
+    // Implement debounced search if needed
+}
+
+const clearFilters = () => {
+    filters.value.search = ''
+    filters.value.status = 'all'
+    filters.value.date_from = ''
+    filters.value.date_to = ''
+}
+
+const fetchInvoices = async () => {
+    loading.value = true
+    try {
+        const response = await apiService.getInvoices(filters.value)
+        invoices.value = response.data || []
+        pagination.value = response.pagination || null
+        summary.value = response.summary || {
+            total_invoices: 0,
+            total_amount: 0,
+            overdue_amount: 0,
+            paid_amount: 0
+        }
+    } catch (error) {
+        console.error('Error fetching invoices:', error)
+        invoices.value = []
+    } finally {
+        loading.value = false
+    }
+}
+
+const deleteInvoice = async (id: number) => {
+    if (confirm('Are you sure you want to delete this invoice?')) {
+        try {
+            await apiService.deleteInvoice(id)
+            router.reload()
+        } catch (error) {
+            console.error('Error deleting invoice:', error)
+        }
+    }
+}
+
+const changePage = (page: number) => {
+    router.get(route('finance.accounts-receivable.invoices.index'), { page }, { preserveState: true })
+}
+
+const getStatusVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
+    const variants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+        'draft': 'secondary',
+        'sent': 'default',
+        'paid': 'default',
+        'overdue': 'destructive',
+        'cancelled': 'outline'
+    }
+    return variants[status] || 'secondary'
+}
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -312,99 +410,8 @@ const formatDate = (date: string) => {
     })
 }
 
-const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-        draft: 'Draft',
-        sent: 'Sent',
-        paid: 'Paid',
-        overdue: 'Overdue',
-        cancelled: 'Cancelled'
-    }
-    return labels[status] || status
-}
-
-const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
-        draft: 'secondary',
-        sent: 'default',
-        paid: 'default',
-        overdue: 'destructive',
-        cancelled: 'destructive'
-    }
-    return variants[status] || 'default'
-}
-
-const fetchInvoices = async () => {
-    try {
-        loading.value = true
-        const params = {
-            page: pagination.value?.meta?.current_page || 1,
-            search: filters.value.search,
-            status: filters.value.status === 'all' ? '' : filters.value.status,
-            date_from: filters.value.date_from,
-            date_to: filters.value.date_to
-        }
-
-        const response = await apiService.getInvoices(params)
-        invoices.value = response.data
-        pagination.value = response
-        summary.value = response.summary || summary.value
-    } catch (error) {
-        console.error('Error fetching invoices:', error)
-    } finally {
-        loading.value = false
-    }
-}
-
-const debouncedSearch = () => {
-    clearTimeout(searchTimeout.value)
-    searchTimeout.value = setTimeout(() => {
-        fetchInvoices()
-    }, 500)
-}
-
-const changePage = (page: number) => {
-    pagination.value.meta.current_page = page
-    fetchInvoices()
-}
-
-const viewInvoice = (id: number) => {
-    router.visit(route('finance.accounts-receivable.invoices.show', id))
-}
-
-const editInvoice = (id: number) => {
-    router.visit(route('finance.accounts-receivable.invoices.edit', id))
-}
-
-const recordPayment = (id: number) => {
-    router.visit(route('finance.accounts-receivable.payments.create', { invoice_id: id }))
-}
-
-const deleteInvoice = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this invoice?')) {
-        return
-    }
-
-    try {
-        await apiService.deleteInvoice(id)
-        fetchInvoices()
-    } catch (error) {
-        console.error('Error deleting invoice:', error)
-    }
-}
-
-const searchTimeout = ref<number | null>(null)
-
-const isInvoiceOverdue = (invoice: Invoice): boolean => {
-    return new Date(invoice.due_date) < new Date() &&
-        invoice.status !== 'paid' &&
-        invoice.status !== 'cancelled'
-}
-
-const clearTimeout = (timeout: number | null) => {
-    if (timeout) {
-        window.clearTimeout(timeout)
-    }
+const isOverdue = (dueDate: string) => {
+    return new Date(dueDate) < new Date()
 }
 
 onMounted(() => {

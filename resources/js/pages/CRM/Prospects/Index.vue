@@ -628,9 +628,9 @@ const formatPriority = (priority: string) => {
 }
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('id-ID', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'IDR'
   }).format(amount || 0)
 }
 

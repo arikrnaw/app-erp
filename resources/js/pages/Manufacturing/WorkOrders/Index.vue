@@ -148,7 +148,7 @@
                                 <div class="flex items-center gap-4 text-sm text-muted-foreground">
                                     <span>Est. Hours: {{ workOrder.estimated_hours || 0 }}h</span>
                                     <span>Actual Hours: {{ workOrder.actual_hours || 0 }}h</span>
-                                    <span>Est. Cost: ${{ formatCurrency(workOrder.estimated_cost) }}</span>
+                                                                                <span>Est. Cost: {{ formatCurrency(workOrder.estimated_cost) }}</span>
                                     <span>Created: {{ formatDate(workOrder.created_at) }}</span>
                                 </div>
                             </div>

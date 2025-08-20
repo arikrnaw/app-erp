@@ -539,6 +539,14 @@ class ApiService {
         await this.api.delete(`/chart-of-accounts/${id}`);
     }
 
+    async exportChartOfAccounts(params?: { search?: string; type?: string; status?: string }): Promise<Blob> {
+        const response = await this.api.get('/chart-of-accounts/export', {
+            params,
+            responseType: 'blob',
+        });
+        return response.data;
+    }
+
     // Journal Entries
     async getJournalEntries(params?: { search?: string; status?: string; date?: string; page?: number }): Promise<PaginatedData<JournalEntry>> {
         const response: AxiosResponse = await this.api.get('/journal-entries', { params });

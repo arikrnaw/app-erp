@@ -678,13 +678,15 @@ export interface InventoryTransaction {
 export interface ChartOfAccount {
     id: number;
     account_code: string;
-    account_name: string;
-    account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
+    name: string;
+    type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
     parent_id?: number;
     parent?: ChartOfAccount;
     children?: ChartOfAccount[];
     description?: string;
-    is_active: boolean;
+    balance?: number;
+    status: 'active' | 'inactive';
+    created_by?: number;
     created_at: string;
     updated_at: string;
 }
@@ -953,16 +955,31 @@ export interface IncomeStatementAccount {
 
 // Dashboard Types
 export interface DashboardStats {
+    total_products: number;
+    total_customers: number;
+    total_suppliers: number;
+    total_sales_orders: number;
+    total_purchase_orders: number;
+    low_stock_products: number;
     total_sales: number;
     total_purchases: number;
-    total_revenue: number;
-    total_expenses: number;
-    net_income: number;
-    accounts_receivable: number;
-    accounts_payable: number;
-    cash_balance: number;
     inventory_value: number;
-    recent_transactions: any[];
+    recent_sales_orders: SalesOrder[];
+    low_stock_products_list: Product[];
+    sales_trend: {
+        months: string[];
+        sales: number[];
+    };
+    recent_transactions: Array<{
+        id: number;
+        type: 'sale' | 'purchase';
+        amount: number;
+        description: string;
+        customer?: string;
+        supplier?: string;
+        date: string;
+        status: string;
+    }>;
 }
 
 // Pagination Types

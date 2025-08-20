@@ -135,7 +135,7 @@
                                                 </TableCell>
                                                 <TableCell>{{ product.sku }}</TableCell>
                                                 <TableCell>{{ product.stock_quantity }}</TableCell>
-                                                <TableCell>${{ formatCurrency(product.selling_price) }}</TableCell>
+                                                <TableCell>{{ formatCurrency(product.selling_price) }}</TableCell>
                                                 <TableCell>
                                                     <span :class="[
                                                         'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
@@ -192,6 +192,9 @@ const formatDate = (dateString: string): string => {
 }
 
 const formatCurrency = (amount: number): string => {
-    return amount.toFixed(2)
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+    }).format(amount)
 }
 </script>

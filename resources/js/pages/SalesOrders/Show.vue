@@ -55,7 +55,7 @@
                                     </div>
                                     <div>
                                         <Label class="text-sm font-medium text-gray-500">Total Amount</Label>
-                                        <p class="text-lg font-bold">${{ formatCurrency(salesOrder.total_amount) }}</p>
+                                        <p class="text-lg font-bold">{{ formatCurrency(salesOrder.total_amount) }}</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -111,8 +111,8 @@
                                                 </TableCell>
                                                 <TableCell>{{ item.product?.sku }}</TableCell>
                                                 <TableCell>{{ item.quantity }}</TableCell>
-                                                <TableCell>${{ formatCurrency(item.unit_price) }}</TableCell>
-                                                <TableCell class="text-right">${{ formatCurrency(item.total_price) }}
+                                                <TableCell>{{ formatCurrency(item.unit_price) }}</TableCell>
+                                                <TableCell class="text-right">{{ formatCurrency(item.total_price) }}
                                                 </TableCell>
                                             </TableRow>
                                         </TableBody>
@@ -181,7 +181,10 @@ const formatDate = (dateString: string): string => {
 }
 
 const formatCurrency = (amount: number): string => {
-    return amount.toFixed(2)
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+    }).format(amount)
 }
 
 const getStatusColor = (status: string): string => {

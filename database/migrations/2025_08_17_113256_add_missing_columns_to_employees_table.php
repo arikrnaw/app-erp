@@ -68,7 +68,7 @@ return new class extends Migration
                 $table->decimal('base_salary', 15, 2)->default(0)->after('employment_type');
             }
             if (!Schema::hasColumn('employees', 'currency')) {
-                $table->string('currency', 3)->default('USD')->after('base_salary');
+                $table->string('currency', 3)->default('IDR')->after('base_salary');
             }
             if (!Schema::hasColumn('employees', 'pay_frequency')) {
                 $table->enum('pay_frequency', ['weekly', 'bi_weekly', 'monthly', 'quarterly', 'yearly'])->default('monthly')->after('currency');

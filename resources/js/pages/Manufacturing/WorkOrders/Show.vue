@@ -121,11 +121,11 @@
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-muted-foreground">Estimated Cost</Label>
-                            <p class="text-sm font-semibold">${{ formatCurrency(workOrder.estimated_cost) }}</p>
+                                                            <p class="text-sm font-semibold">{{ formatCurrency(workOrder.estimated_cost) }}</p>
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-muted-foreground">Actual Cost</Label>
-                            <p class="text-sm font-semibold">${{ formatCurrency(workOrder.actual_cost) }}</p>
+                                                            <p class="text-sm font-semibold">{{ formatCurrency(workOrder.actual_cost) }}</p>
                         </div>
                     </div>
 

@@ -87,10 +87,10 @@
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div class="text-sm">${{ formatCurrency(product?.selling_price
+                                            <div class="text-sm">{{ formatCurrency(product?.selling_price
                                                 || 0)
                                             }}</div>
-                                            <div class="text-xs text-gray-500">Cost: ${{
+                                            <div class="text-xs text-gray-500">Cost: {{
                                                 formatCurrency(product?.cost_price ||
                                                     0) }}</div>
                                         </TableCell>
@@ -218,9 +218,9 @@ const loadCategories = async (): Promise<void> => {
 };
 
 const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'IDR'
     }).format(amount);
 };
 

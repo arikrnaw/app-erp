@@ -356,10 +356,10 @@ const formatDateTime = (dateString: string): string => {
 }
 
 const formatCurrency = (amount: number): string => {
-    if (!amount) return '0.00'
-    return new Intl.NumberFormat('en-US', {
+    if (!amount) return 'Rp 0'
+    return new Intl.NumberFormat('id-ID', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'IDR'
     }).format(amount)
 }
 

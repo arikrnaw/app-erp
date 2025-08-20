@@ -336,12 +336,24 @@ Route::middleware([
     Route::get('finance/chart-of-accounts/create', function () {
         return Inertia::render('Finance/ChartOfAccounts/Create');
     })->name('finance.chart-of-accounts.create');
+    Route::post('finance/chart-of-accounts', function () {
+        // This will be handled by the API controller
+        return redirect()->route('finance.chart-of-accounts.index');
+    })->name('finance.chart-of-accounts.store');
     Route::get('finance/chart-of-accounts/{id}', function ($id) {
         return Inertia::render('Finance/ChartOfAccounts/Show', ['id' => $id]);
     })->name('finance.chart-of-accounts.show');
     Route::get('finance/chart-of-accounts/{id}/edit', function ($id) {
         return Inertia::render('Finance/ChartOfAccounts/Edit', ['id' => $id]);
     })->name('finance.chart-of-accounts.edit');
+    Route::put('finance/chart-of-accounts/{id}', function ($id) {
+        // This will be handled by the API controller
+        return redirect()->route('finance.chart-of-accounts.index');
+    })->name('finance.chart-of-accounts.update');
+    Route::delete('finance/chart-of-accounts/{id}', function ($id) {
+        // This will be handled by the API controller
+        return redirect()->route('finance.chart-of-accounts.index');
+    })->name('finance.chart-of-accounts.destroy');
 
     // Finance - Journal Entries
     Route::get('finance/journal-entries', function () {

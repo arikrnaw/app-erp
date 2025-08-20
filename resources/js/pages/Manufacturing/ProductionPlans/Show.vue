@@ -98,11 +98,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <Label class="text-sm font-medium text-muted-foreground">Estimated Cost</Label>
-                            <p class="text-sm font-semibold">${{ formatCurrency(plan.estimated_cost) }}</p>
+                                                            <p class="text-sm font-semibold">{{ formatCurrency(plan.estimated_cost) }}</p>
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-muted-foreground">Actual Cost</Label>
-                            <p class="text-sm font-semibold">${{ formatCurrency(plan.actual_cost) }}</p>
+                                                            <p class="text-sm font-semibold">{{ formatCurrency(plan.actual_cost) }}</p>
                         </div>
                     </div>
 

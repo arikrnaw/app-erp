@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('education_level')->nullable();
             $table->decimal('min_salary', 15, 2)->nullable();
             $table->decimal('max_salary', 15, 2)->nullable();
-            $table->string('currency', 3)->default('USD');
+            $table->string('currency', 3)->default('IDR');
             $table->boolean('show_salary')->default(false);
             $table->integer('number_of_positions')->default(1);
             $table->date('application_deadline')->nullable();

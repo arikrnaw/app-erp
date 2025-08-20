@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('calculation_type', ['fixed_amount', 'percentage', 'per_day', 'per_month', 'per_year'])->default('fixed_amount');
             $table->decimal('amount', 15, 2)->default(0);
             $table->decimal('percentage', 5, 2)->nullable(); // if calculation_type is percentage
-            $table->string('currency', 3)->default('USD');
+            $table->string('currency', 3)->default('IDR');
             $table->date('effective_date');
             $table->date('expiry_date')->nullable();
             $table->enum('frequency', ['one_time', 'monthly', 'quarterly', 'yearly'])->default('monthly');
