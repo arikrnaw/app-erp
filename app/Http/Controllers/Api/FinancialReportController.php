@@ -9,13 +9,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class FinancialReportController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
         $query = FinancialReport::with(['creator', 'company'])
-            ->where('company_id', auth()->user()->company_id);
+            ->where('company_id', Auth::user()->company_id);
 
         // Apply filters
         if ($request->filled('search')) {
@@ -104,8 +105,8 @@ class FinancialReportController extends Controller
                 'financial_metrics' => $request->financial_metrics,
                 'chart_data' => $request->chart_data,
                 'status' => $request->status ?? 'draft',
-                'created_by' => auth()->id(),
-                'company_id' => auth()->user()->company_id,
+                'created_by' => Auth::id(),
+                'company_id' => Auth::user()->company_id,
             ]);
 
             DB::commit();
@@ -128,7 +129,7 @@ class FinancialReportController extends Controller
 
     public function show(FinancialReport $financialReport): JsonResponse
     {
-        if ($financialReport->company_id !== auth()->user()->company_id) {
+        if ($financialReport->company_id !== Auth::user()->company_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access'
@@ -144,7 +145,7 @@ class FinancialReportController extends Controller
 
     public function update(Request $request, FinancialReport $financialReport): JsonResponse
     {
-        if ($financialReport->company_id !== auth()->user()->company_id) {
+        if ($financialReport->company_id !== Auth::user()->company_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access'
@@ -208,7 +209,7 @@ class FinancialReportController extends Controller
 
     public function destroy(FinancialReport $financialReport): JsonResponse
     {
-        if ($financialReport->company_id !== auth()->user()->company_id) {
+        if ($financialReport->company_id !== Auth::user()->company_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized access'
@@ -234,7 +235,7 @@ class FinancialReportController extends Controller
 
     public function statistics(): JsonResponse
     {
-        $companyId = auth()->user()->company_id;
+        $companyId = Auth::user()->company_id;
 
         $stats = [
             'total_reports' => FinancialReport::where('company_id', $companyId)->count(),

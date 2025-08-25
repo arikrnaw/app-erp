@@ -89,4 +89,9 @@ class Company extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function assetCategories(): HasMany
+    {
+        return $this->hasMany(\App\Models\Finance\AssetCategory::class);
+    }
 }

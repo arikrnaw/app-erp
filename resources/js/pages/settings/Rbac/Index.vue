@@ -1,4 +1,5 @@
 <template>
+
     <Head title="Roles & Permissions" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
@@ -152,7 +153,8 @@
                             No recent activity
                         </div>
                         <div v-else class="space-y-3">
-                            <div v-for="activity in recentActivity" :key="activity.id" class="flex items-center gap-3 p-3 rounded-lg border">
+                            <div v-for="activity in recentActivity" :key="activity.id"
+                                class="flex items-center gap-3 p-3 rounded-lg border">
                                 <div class="flex-shrink-0">
                                     <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                                         <Shield v-if="activity.type === 'role'" class="w-4 h-4 text-primary" />
@@ -201,7 +203,15 @@ const stats = ref({
     users_with_roles: 0
 })
 
-const recentActivity = ref([])
+interface ActivityItem {
+    id: number
+    type: 'role' | 'permission' | 'user'
+    description: string
+    created_at: string
+}
+
+const recentActivity = ref<ActivityItem[]>([])
+
 const loading = ref(false)
 
 const fetchStats = async () => {

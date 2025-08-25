@@ -25,7 +25,10 @@ import {
     Factory,
     ClipboardList,
     TrendingUp,
-    HelpCircle
+    HelpCircle,
+    Globe,
+    Building,
+    CheckCircle
 } from 'lucide-vue-next';
 
 interface CommandItem {
@@ -218,6 +221,51 @@ const commands: CommandItem[] = [
         route: '/finance/trial-balance',
         category: 'Finance',
         keywords: ['trial balance', 'balance sheet', 'financial']
+    },
+    {
+        id: 'cash-management',
+        title: 'Cash Management',
+        description: 'Manage bank accounts and petty cash',
+        icon: CreditCard,
+        route: '/finance/cash-management',
+        category: 'Finance',
+        keywords: ['cash management', 'bank accounts', 'petty cash', 'cash flow', 'banking']
+    },
+    {
+        id: 'fixed-assets',
+        title: 'Fixed Assets',
+        description: 'Manage assets and depreciation',
+        icon: Building,
+        route: '/finance/fixed-assets',
+        category: 'Finance',
+        keywords: ['fixed assets', 'assets', 'depreciation', 'asset management', 'capital assets']
+    },
+    {
+        id: 'budgeting',
+        title: 'Budgeting',
+        description: 'Budget planning and analysis',
+        icon: TrendingUp,
+        route: '/finance/budgeting',
+        category: 'Finance',
+        keywords: ['budgeting', 'budget', 'planning', 'forecasting', 'variance analysis']
+    },
+    {
+        id: 'multi-currency',
+        title: 'Multi-Currency',
+        description: 'Manage currencies and exchange rates',
+        icon: Globe,
+        route: '/finance/multi-currency',
+        category: 'Finance',
+        keywords: ['multi-currency', 'currencies', 'exchange rates', 'foreign currency', 'forex']
+    },
+    {
+        id: 'approval-workflow',
+        title: 'Approval Workflow',
+        description: 'Manage and track financial approval workflows',
+        icon: CheckCircle,
+        route: '/finance/approval-workflow',
+        category: 'Finance',
+        keywords: ['approval', 'workflow', 'approve', 'reject', 'pending']
     },
 
     // Manufacturing

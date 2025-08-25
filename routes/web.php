@@ -1,8 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Laravel\WorkOS\Http\Middleware\ValidateSessionWithWorkOS;
+use App\Models\ChartOfAccount;
 
 Route::get('/', fn () => Inertia::render('Welcome'));
 
@@ -341,10 +343,20 @@ Route::middleware([
         return redirect()->route('finance.chart-of-accounts.index');
     })->name('finance.chart-of-accounts.store');
     Route::get('finance/chart-of-accounts/{id}', function ($id) {
-        return Inertia::render('Finance/ChartOfAccounts/Show', ['id' => $id]);
+        $account = ChartOfAccount::with(['parent', 'children', 'created_by_user'])
+            ->where('id', $id)
+            ->where('company_id', Auth::user()->company_id)
+            ->firstOrFail();
+        
+        return Inertia::render('Finance/ChartOfAccounts/Show', ['account' => $account]);
     })->name('finance.chart-of-accounts.show');
     Route::get('finance/chart-of-accounts/{id}/edit', function ($id) {
-        return Inertia::render('Finance/ChartOfAccounts/Edit', ['id' => $id]);
+        $account = ChartOfAccount::with(['parent', 'children', 'created_by_user'])
+            ->where('id', $id)
+            ->where('company_id', Auth::user()->company_id)
+            ->firstOrFail();
+        
+        return Inertia::render('Finance/ChartOfAccounts/Edit', ['account' => $account]);
     })->name('finance.chart-of-accounts.edit');
     Route::put('finance/chart-of-accounts/{id}', function ($id) {
         // This will be handled by the API controller
@@ -428,6 +440,194 @@ Route::middleware([
     Route::get('finance/reports/income-statement', function () {
         return Inertia::render('Finance/Reports/IncomeStatement');
     })->name('finance.reports.income-statement');
+
+    // Finance - Multi-Currency
+    Route::prefix('finance/multi-currency')->name('finance.multi-currency.')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Finance/MultiCurrency/Index');
+        })->name('index');
+        
+        Route::get('/exchange-rate-history', function () {
+            return Inertia::render('Finance/MultiCurrency/ExchangeRateHistory');
+        })->name('exchange-rate-history');
+    });
+
+    // Finance - Cash Management
+    Route::prefix('finance/cash-management')->name('finance.cash-management.')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Finance/CashManagement/Index');
+        })->name('index');
+        
+        // Bank Accounts
+        Route::get('/bank-accounts', function () {
+            return Inertia::render('Finance/CashManagement/BankAccounts/Index');
+        })->name('bank-accounts.index');
+        
+        Route::get('/bank-accounts/create', function () {
+            return Inertia::render('Finance/CashManagement/BankAccounts/Create');
+        })->name('bank-accounts.create');
+        
+        Route::get('/bank-accounts/{id}', function ($id) {
+            return Inertia::render('Finance/CashManagement/BankAccounts/Show', ['id' => $id]);
+        })->name('bank-accounts.show');
+        
+        Route::get('/bank-accounts/{id}/edit', function ($id) {
+            return Inertia::render('Finance/CashManagement/BankAccounts/Edit', ['id' => $id]);
+        })->name('bank-accounts.edit');
+        
+        // Petty Cash
+        Route::get('/petty-cash', function () {
+            return Inertia::render('Finance/CashManagement/PettyCash/Index');
+        })->name('petty-cash.index');
+        
+        Route::get('/petty-cash/create', function () {
+            return Inertia::render('Finance/CashManagement/PettyCash/Create');
+        })->name('petty-cash.create');
+        
+        Route::get('/petty-cash/{id}', function ($id) {
+            return Inertia::render('Finance/CashManagement/PettyCash/Show', ['id' => $id]);
+        })->name('petty-cash.show');
+        
+        Route::get('/petty-cash/{id}/edit', function ($id) {
+            return Inertia::render('Finance/CashManagement/PettyCash/Edit', ['id' => $id]);
+        })->name('petty-cash.edit');
+        
+        // Cash Transactions
+        Route::get('/transactions', function () {
+            return Inertia::render('Finance/CashManagement/Transactions/Index');
+        })->name('transactions.index');
+        
+        Route::get('/transactions/create', function () {
+            return Inertia::render('Finance/CashManagement/Transactions/Create');
+        })->name('transactions.create');
+        
+        Route::get('/transactions/{id}', function ($id) {
+            return Inertia::render('Finance/CashManagement/Transactions/Show', ['id' => $id]);
+        })->name('transactions.show');
+        
+        Route::get('/transactions/{id}/edit', function ($id) {
+            return Inertia::render('Finance/CashManagement/Transactions/Edit', ['id' => $id]);
+        })->name('transactions.edit');
+        
+        // Reports
+        Route::get('/reports/cash-flow', function () {
+            return Inertia::render('Finance/CashManagement/Reports/CashFlow');
+        })->name('reports.cash-flow');
+    });
+
+    // Finance - Fixed Assets
+    Route::prefix('finance/fixed-assets')->name('finance.fixed-assets.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Finance\FixedAssetsController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Finance\FixedAssetsController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Finance\FixedAssetsController::class, 'store'])->name('store');
+        Route::get('/{id}', [App\Http\Controllers\Finance\FixedAssetsController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [App\Http\Controllers\Finance\FixedAssetsController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [App\Http\Controllers\Finance\FixedAssetsController::class, 'update'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Finance\FixedAssetsController::class, 'destroy'])->name('destroy');
+        
+        // Asset Categories
+        Route::get('/categories', function () {
+            return Inertia::render('Finance/FixedAssets/Categories/Index');
+        })->name('categories.index');
+        
+        Route::get('/categories/create', function () {
+            return Inertia::render('Finance/FixedAssets/Categories/Create');
+        })->name('categories.create');
+        
+        Route::get('/categories/{id}', function ($id) {
+            return Inertia::render('Finance/FixedAssets/Categories/Show', ['id' => $id]);
+        })->name('categories.show');
+        
+        Route::get('/categories/{id}/edit', function ($id) {
+            return Inertia::render('Finance/FixedAssets/Categories/Edit', ['id' => $id]);
+        })->name('categories.edit');
+        
+        // Depreciation
+        Route::get('/depreciation', function () {
+            return Inertia::render('Finance/FixedAssets/Depreciation/Index');
+        })->name('depreciation.index');
+        
+        Route::get('/depreciation/calculate', function () {
+            return Inertia::render('Finance/FixedAssets/Depreciation/Calculate');
+        })->name('depreciation.calculate');
+    });
+
+    // Finance - Budgeting
+    Route::prefix('finance/budgeting')->name('finance.budgeting.')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Finance/Budgeting/Index');
+        })->name('index');
+        
+        Route::get('/create', function () {
+            return Inertia::render('Finance/Budgeting/Create');
+        })->name('create');
+        
+        Route::get('/{id}', function ($id) {
+            return Inertia::render('Finance/Budgeting/Show', ['id' => $id]);
+        })->name('show');
+        
+        Route::get('/{id}/edit', function ($id) {
+            return Inertia::render('Finance/Budgeting/Edit', ['id' => $id]);
+        })->name('edit');
+        
+        // Budget Periods
+        Route::get('/periods', function () {
+            return Inertia::render('Finance/Budgeting/Periods/Index');
+        })->name('periods.index');
+        
+        Route::get('/periods/create', function () {
+            return Inertia::render('Finance/Budgeting/Periods/Create');
+        })->name('periods.create');
+        
+        Route::get('/periods/{id}', function ($id) {
+            return Inertia::render('Finance/Budgeting/Periods/Show', ['id' => $id]);
+        })->name('periods.show');
+        
+        Route::get('/periods/{id}/edit', function ($id) {
+            return Inertia::render('Finance/Budgeting/Periods/Edit', ['id' => $id]);
+        })->name('periods.edit');
+        
+        // Budget Categories
+        Route::get('/categories', function () {
+            return Inertia::render('Finance/Budgeting/Categories/Index');
+        })->name('categories.index');
+        
+        Route::get('/categories/create', function () {
+            return Inertia::render('Finance/Budgeting/Categories/Create');
+        })->name('categories.create');
+        
+        Route::get('/categories/{id}', function ($id) {
+            return Inertia::render('Finance/Budgeting/Categories/Show', ['id' => $id]);
+        })->name('categories.show');
+        
+        Route::get('/categories/{id}/edit', function ($id) {
+            return Inertia::render('Finance/Budgeting/Categories/Edit', ['id' => $id]);
+        })->name('categories.edit');
+        
+        // Variance Analysis
+        Route::get('/variance-analysis', function () {
+            return Inertia::render('Finance/Budgeting/VarianceAnalysis/Index');
+        })->name('variance-analysis.index');
+        
+        Route::get('/variance-analysis/create', function () {
+            return Inertia::render('Finance/Budgeting/VarianceAnalysis/Create');
+        })->name('variance-analysis.create');
+        
+        // Forecasting
+        Route::get('/forecast', function () {
+            return Inertia::render('Finance/Budgeting/Forecast/Index');
+        })->name('forecast.index');
+        
+        // Reports
+        Route::get('/reports/variance', function () {
+            return Inertia::render('Finance/Budgeting/Reports/Variance');
+        })->name('reports.variance.index');
+        
+        // Settings
+        Route::get('/settings', function () {
+            return Inertia::render('Finance/Budgeting/Settings/Index');
+        })->name('settings.index');
+    });
 
     // Finance - Tax Management
     Route::prefix('finance/tax-management')->name('finance.tax-management.')->group(function () {
@@ -926,7 +1126,36 @@ Route::middleware([
         Route::get('/users/{id}/edit', function ($id) {
             return Inertia::render('settings/Rbac/Users/Edit', ['id' => $id]);
         })->name('users.edit');
+
+        // General Settings
+        Route::get('/general', function () {
+            return Inertia::render('settings/General');
+        })->name('general');
+
+        // User Management
+        Route::get('/users-management', function () {
+            return Inertia::render('settings/Users');
+        })->name('users-management');
+
+        // System Configuration
+        Route::get('/system', function () {
+            return Inertia::render('settings/System');
+        })->name('system');
+
+        // Backup & Restore
+        Route::get('/backup', function () {
+            return Inertia::render('settings/Backup');
+        })->name('backup');
     });
+
+    // Finance - Approval Workflow
+    Route::prefix('finance/approval-workflow')->name('finance.approval-workflow.')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Finance/ApprovalWorkflow/Index');
+        })->name('index');
+    });
+
+
 });
 
 require __DIR__.'/settings.php';

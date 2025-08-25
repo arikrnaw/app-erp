@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Auth;
 
 class SalesOrderController extends Controller
 {
@@ -46,8 +47,8 @@ class SalesOrderController extends Controller
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);
 
-        $validated['company_id'] = 1; // Assuming single company for now
-        $validated['created_by'] = $request->user()->id;
+        $validated['company_id'] = Auth::user()->company_id;
+        $validated['created_by'] = Auth::id();
 
         $salesOrder = SalesOrder::create($validated);
 

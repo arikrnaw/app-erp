@@ -18,4 +18,20 @@ Route::middleware([
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/Appearance');
     })->name('appearance');
+
+    Route::get('settings/general', function () {
+        return Inertia::render('settings/General');
+    })->name('general');
+
+    Route::get('settings/users', function () {
+        return Inertia::render('settings/Users');
+    })->name('users');
+
+    Route::get('settings/system', function () {
+        return Inertia::render('settings/System');
+    })->name('system');
+
+    Route::get('settings/backup', function () {
+        return Inertia::render('settings/Backup');
+    })->name('backup');
 });

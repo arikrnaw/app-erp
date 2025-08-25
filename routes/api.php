@@ -499,3 +499,120 @@ Route::prefix('ai-chat')->group(function () {
     Route::get('/history', [AiChatController::class, 'getChatHistory']);
     Route::delete('/history', [AiChatController::class, 'clearChatHistory']);
 });
+
+// Finance - Cash Management Routes
+Route::prefix('finance/cash-management')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'dashboard']);
+    Route::get('/bank-accounts', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getBankAccounts']);
+    Route::post('/bank-accounts', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'createBankAccount']);
+    Route::get('/bank-accounts/{id}', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getBankAccount']);
+    Route::put('/bank-accounts/{id}', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'updateBankAccount']);
+    Route::patch('/bank-accounts/{id}/status', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'toggleBankAccountStatus']);
+    Route::get('/bank-accounts/export', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'exportBankAccounts']);
+    
+    Route::get('/petty-cash', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getPettyCashFunds']);
+    Route::post('/petty-cash', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'createPettyCashFund']);
+    
+    Route::get('/transactions/recent', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getRecentTransactions']);
+    Route::post('/transactions', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'createTransaction']);
+    
+    Route::get('/export/cash-flow', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'exportCashFlow']);
+});
+
+// Finance - Fixed Assets Routes
+Route::prefix('finance/fixed-assets')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'dashboard']);
+    Route::get('/', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getAssets']);
+    Route::post('/', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'createAsset']);
+    Route::get('/{id}', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getAsset']);
+    Route::put('/{id}', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'updateAsset']);
+    
+    Route::get('/categories', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getCategories']);
+    Route::post('/categories', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'createCategory']);
+    
+    Route::get('/monthly-depreciation', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getMonthlyDepreciation']);
+    Route::post('/{id}/calculate-depreciation', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'calculateDepreciation']);
+    
+    Route::get('/export', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'exportAssets']);
+});
+
+// Finance - Budgeting Routes
+Route::prefix('finance/budgeting')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'dashboard']);
+    Route::get('/budgets', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'getBudgets']);
+    Route::post('/budgets', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'createBudget']);
+    
+    Route::get('/periods', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'getBudgetPeriods']);
+    Route::post('/periods', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'createBudgetPeriod']);
+    
+    Route::get('/categories', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'getBudgetCategories']);
+    Route::post('/categories', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'createBudgetCategory']);
+    
+    Route::get('/variance-analysis', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'getVarianceAnalysis']);
+    Route::post('/variance-analysis', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'createVarianceAnalysis']);
+    
+    Route::get('/export', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'exportBudgetReport']);
+    Route::get('/forecast', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'getFinancialForecast']);
+});
+
+// Finance - Multi-Currency Routes
+Route::prefix('finance/multi-currency')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'dashboard']);
+    Route::get('/currencies', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'getCurrencies']);
+    Route::post('/currencies', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'createCurrency']);
+    Route::patch('/currencies/{id}', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'updateCurrency']);
+    Route::patch('/currencies/{id}/toggle-status', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'toggleCurrencyStatus']);
+    Route::get('/exchange-rates', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'getExchangeRates']);
+    Route::patch('/exchange-rates/{id}', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'updateExchangeRate']);
+    Route::post('/refresh-rates', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'refreshExchangeRates']);
+    Route::get('/exchange-rate-history', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'getExchangeRateHistory']);
+    Route::get('/export-history', [App\Http\Controllers\Api\Finance\MultiCurrencyController::class, 'exportHistory']);
+});
+
+// Finance - Approval Workflow Routes
+Route::prefix('finance/approval-workflow')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'dashboard']);
+    Route::get('/workflows', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'getWorkflows']);
+    Route::post('/workflows', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'createWorkflow']);
+    Route::patch('/workflows/{id}', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'updateWorkflow']);
+    Route::get('/approval-requests', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'getApprovalRequests']);
+    Route::post('/approval-requests', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'createApprovalRequest']);
+    Route::patch('/approval-requests/{id}/process', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'processApproval']);
+    Route::get('/approval-rules', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'getApprovalRules']);
+    Route::get('/export-approvals', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'exportApprovals']);
+});
+
+// Purchasing - Purchase Order Routes
+Route::prefix('purchasing/purchase-orders')->group(function () {
+    Route::get('/', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'store']);
+    Route::get('/{id}', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'show']);
+    Route::patch('/{id}', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'update']);
+    Route::post('/{id}/submit-approval', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'submitForApproval']);
+    Route::post('/{id}/cancel', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'cancel']);
+    Route::get('/pending-approval', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'pendingApproval']);
+});
+
+// Finance - Expense Routes
+Route::prefix('finance/expenses')->group(function () {
+    Route::get('/', [App\Http\Controllers\Api\Finance\ExpenseController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\Api\Finance\ExpenseController::class, 'store']);
+    Route::get('/{id}', [App\Http\Controllers\Api\Finance\ExpenseController::class, 'show']);
+    Route::patch('/{id}', [App\Http\Controllers\Api\Finance\ExpenseController::class, 'update']);
+    Route::post('/{id}/submit-approval', [App\Http\Controllers\Api\Finance\ExpenseController::class, 'submitForApproval']);
+    Route::post('/{id}/cancel', [App\Http\Controllers\Api\Finance\ExpenseController::class, 'cancel']);
+    Route::get('/pending-approval', [App\Http\Controllers\Api\Finance\ExpenseController::class, 'pendingApproval']);
+    Route::get('/analytics', [App\Http\Controllers\Api\Finance\ExpenseController::class, 'analytics']);
+});
+
+// Finance - Asset Purchase Routes
+Route::prefix('finance/asset-purchases')->group(function () {
+    Route::get('/', [App\Http\Controllers\Api\Finance\AssetPurchaseController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\Api\Finance\AssetPurchaseController::class, 'store']);
+    Route::get('/{id}', [App\Http\Controllers\Api\Finance\AssetPurchaseController::class, 'show']);
+    Route::patch('/{id}', [App\Http\Controllers\Api\Finance\AssetPurchaseController::class, 'update']);
+    Route::post('/{id}/submit-approval', [App\Http\Controllers\Api\Finance\AssetPurchaseController::class, 'submitForApproval']);
+    Route::post('/{id}/cancel', [App\Http\Controllers\Api\Finance\AssetPurchaseController::class, 'cancel']);
+    Route::get('/pending-approval', [App\Http\Controllers\Api\Finance\AssetPurchaseController::class, 'pendingApproval']);
+    Route::get('/analytics', [App\Http\Controllers\Api\Finance\AssetPurchaseController::class, 'analytics']);
+});

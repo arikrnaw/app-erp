@@ -100,7 +100,7 @@
                   <SelectValue placeholder="All Accounts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Accounts</SelectItem>
+                  <SelectItem value="all">All Accounts</SelectItem>
                   <SelectItem v-for="account in accounts" :key="account.id" :value="account.id">
                     {{ account.account_code }} - {{ account.account_name }}
                   </SelectItem>
@@ -125,7 +125,7 @@
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="asset">Asset</SelectItem>
                   <SelectItem value="liability">Liability</SelectItem>
                   <SelectItem value="equity">Equity</SelectItem>
@@ -224,24 +224,10 @@
           </div>
 
           <!-- Pagination -->
-          <div v-if="pagination && pagination.meta && pagination.meta.last_page > 1"
-            class="flex items-center justify-between mt-6">
-            <div class="text-sm text-muted-foreground">
-              Showing {{ pagination.meta.from }} to {{ pagination.meta.to }} of {{ pagination.meta.total }} results
-            </div>
-            <div class="flex gap-2">
-              <Button variant="outline" size="sm" :disabled="pagination.meta.current_page === 1"
-                @click="changePage(pagination.meta.current_page - 1)">
-                <ChevronLeft class="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-              <Button variant="outline" size="sm" :disabled="pagination.meta.current_page === pagination.meta.last_page"
-                @click="changePage(pagination.meta.current_page + 1)">
-                Next
-                <ChevronRight class="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </div>
+          <DataPagination v-if="pagination && pagination.meta && pagination.meta.last_page > 1"
+            :current-page="pagination.meta.current_page" :total-pages="pagination.meta.last_page"
+            :total-items="pagination.meta.total" :per-page="pagination.meta.per_page || 15" class="mt-6"
+            @page-change="changePage" />
         </CardContent>
       </Card>
     </div>
@@ -258,6 +244,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataPagination } from '@/components/ui/pagination'
 import {
   Download,
   Printer,
@@ -265,12 +252,29 @@ import {
   TrendingUp,
   TrendingDown,
   Calculator,
-  FileText,
-  ChevronLeft,
-  ChevronRight
+  FileText
 } from 'lucide-vue-next'
 import { apiService } from '@/services/api'
 import type { BreadcrumbItemType } from '@/types'
+
+interface LedgerEntry {
+  id: number
+  date: string
+  account_code: string
+  account_name: string
+  description?: string
+  reference_type?: string
+  reference_id?: number
+  debit: number
+  credit: number
+  balance: number
+}
+
+interface Account {
+  id: number
+  account_code: string
+  account_name: string
+}
 
 const breadcrumbs: BreadcrumbItemType[] = [
   { title: 'Dashboard', href: '/dashboard' },
@@ -279,9 +283,18 @@ const breadcrumbs: BreadcrumbItemType[] = [
 ]
 
 const loading = ref(false)
-const ledgerData = ref([])
-const accounts = ref([])
-const pagination = ref(null)
+const ledgerData = ref<LedgerEntry[]>([])
+const accounts = ref<Account[]>([])
+const pagination = ref<{
+  meta: {
+    current_page: number
+    last_page: number
+    total: number
+    per_page: number
+    from: number
+    to: number
+  }
+} | null>(null)
 
 const summary = ref({
   total_assets: 0,
@@ -290,16 +303,25 @@ const summary = ref({
 })
 
 const filters = ref({
-  account_id: '',
+  account_id: 'all',
   date_from: '',
   date_to: '',
-  type: ''
+  type: 'all'
 })
 
 const fetchLedger = async () => {
   loading.value = true
   try {
-    const response = await apiService.getGeneralLedger(filters.value)
+    // Prepare filters for API call, converting 'all' to empty strings
+    const apiFilters = {
+      account_id: filters.value.account_id === 'all' ? '' : filters.value.account_id,
+      date_from: filters.value.date_from,
+      date_to: filters.value.date_to,
+      type: filters.value.type === 'all' ? '' : filters.value.type,
+      page: pagination.value?.meta?.current_page || 1
+    }
+
+    const response = await apiService.getGeneralLedger(apiFilters)
     ledgerData.value = response.data || []
     pagination.value = response.pagination || null
     summary.value = response.summary || {
@@ -317,7 +339,15 @@ const fetchLedger = async () => {
 
 const exportLedger = async () => {
   try {
-    const response = await apiService.exportGeneralLedger(filters.value)
+    // Prepare filters for API call, converting 'all' to empty strings
+    const apiFilters = {
+      account_id: filters.value.account_id === 'all' ? '' : filters.value.account_id,
+      date_from: filters.value.date_from,
+      date_to: filters.value.date_to,
+      type: filters.value.type === 'all' ? '' : filters.value.type
+    }
+
+    const response = await apiService.exportGeneralLedger(apiFilters)
     // Handle file download
     const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
@@ -331,8 +361,15 @@ const exportLedger = async () => {
   }
 }
 
-const changePage = (page: number) => {
-  // Implement pagination
+const changePage = async (page: number) => {
+  if (pagination.value && page >= 1 && page <= pagination.value.meta.last_page) {
+    // Update current page in pagination
+    if (pagination.value.meta) {
+      pagination.value.meta.current_page = page
+    }
+    // Fetch data for the new page
+    await fetchLedger()
+  }
 }
 
 const formatCurrency = (amount: number) => {

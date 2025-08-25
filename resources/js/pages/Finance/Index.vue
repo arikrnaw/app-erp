@@ -319,6 +319,70 @@
                                 </CardContent>
                             </Card>
                         </Link>
+
+                        <Link :href="route('finance.cash-management.index')">
+                            <Card class="hover:shadow-md transition-shadow cursor-pointer">
+                                <CardContent class="p-6">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                                            <Wallet class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold">Cash Management</h3>
+                                            <p class="text-sm text-muted-foreground">Bank accounts & petty cash</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+
+                        <Link :href="route('finance.fixed-assets.index')">
+                            <Card class="hover:shadow-md transition-shadow cursor-pointer">
+                                <CardContent class="p-6">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="p-2 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg">
+                                            <Building class="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold">Fixed Assets</h3>
+                                            <p class="text-sm text-muted-foreground">Asset management & depreciation</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+
+                        <Link :href="route('finance.budgeting.index')">
+                            <Card class="hover:shadow-md transition-shadow cursor-pointer">
+                                <CardContent class="p-6">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                                            <PieChart class="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold">Budgeting</h3>
+                                            <p class="text-sm text-muted-foreground">Budget planning & analysis</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+
+                        <Link :href="route('finance.multi-currency.index')">
+                            <Card class="hover:shadow-md transition-shadow cursor-pointer">
+                                <CardContent class="p-6">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                                            <Globe class="h-6 w-6 text-green-600 dark:text-green-400" />
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold">Multi-Currency</h3>
+                                            <p class="text-sm text-muted-foreground">Exchange rates & foreign currency</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
                     </div>
                 </CardContent>
             </Card>
@@ -353,7 +417,10 @@ import {
     FileText,
     BarChart3,
     Eye,
-    Edit
+    Edit,
+    Building,
+    PieChart,
+    Globe
 } from 'lucide-vue-next';
 
 const breadcrumbs: BreadcrumbItemType[] = [

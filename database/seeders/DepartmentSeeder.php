@@ -21,7 +21,7 @@ class DepartmentSeeder extends Seeder
                 'company_id' => $company->id,
                 'name' => 'Administration',
                 'description' => 'Administrative department',
-                'is_active' => true,
+                'status' => 'active',
             ]
         );
 
@@ -31,7 +31,7 @@ class DepartmentSeeder extends Seeder
                 'company_id' => $company->id,
                 'name' => 'Sales',
                 'description' => 'Sales and marketing department',
-                'is_active' => true,
+                'status' => 'active',
             ]
         );
 
@@ -41,7 +41,7 @@ class DepartmentSeeder extends Seeder
                 'company_id' => $company->id,
                 'name' => 'Finance',
                 'description' => 'Finance and accounting department',
-                'is_active' => true,
+                'status' => 'active',
             ]
         );
 
@@ -51,7 +51,7 @@ class DepartmentSeeder extends Seeder
                 'company_id' => $company->id,
                 'name' => 'Operations',
                 'description' => 'Operations and logistics department',
-                'is_active' => true,
+                'status' => 'active',
             ]
         );
     }

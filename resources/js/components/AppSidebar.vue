@@ -6,7 +6,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import ScrollArea from '@/components/ui/scroll-area.vue';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Package, Users, Truck, ShoppingCart, ShoppingBag, DollarSign, BookOpenCheck, Calculator, Receipt, FileText, CreditCard, Warehouse, Package2, AlertTriangle, TrendingUp, BarChart3, FileSpreadsheet, ClipboardList, PackageCheck, RotateCcw, Settings, Calendar, Wrench, UserCheck, Clock, CreditCard as CreditCardIcon, MessageSquare, Target, Users2, DollarSign as DollarSignIcon, Headphones, Shield, Ticket, Tag, Bot } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Package, Users, Truck, ShoppingCart, ShoppingBag, DollarSign, BookOpenCheck, Calculator, Receipt, FileText, CreditCard, Warehouse, Package2, AlertTriangle, TrendingUp, BarChart3, FileSpreadsheet, ClipboardList, PackageCheck, RotateCcw, Settings, Calendar, Wrench, UserCheck, Clock, CreditCard as CreditCardIcon, MessageSquare, Target, Users2, DollarSign as DollarSignIcon, Headphones, Shield, Ticket, Tag, Bot, Globe, Building, CheckCircle } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -58,6 +58,31 @@ const mainNavItems: NavItem[] = [
                 title: 'Bank Reconciliation',
                 href: '/finance/bank-reconciliation/bank-accounts',
                 icon: BarChart3,
+            },
+            {
+                title: 'Cash Management',
+                href: '/finance/cash-management',
+                icon: CreditCard,
+            },
+            {
+                title: 'Fixed Assets',
+                href: '/finance/fixed-assets',
+                icon: Building,
+            },
+            {
+                title: 'Budgeting',
+                href: '/finance/budgeting',
+                icon: TrendingUp,
+            },
+            {
+                title: 'Multi-Currency',
+                href: '/finance/multi-currency',
+                icon: Globe,
+            },
+            {
+                title: 'Approval Workflow',
+                href: '/finance/approval-workflow',
+                icon: CheckCircle,
             },
             {
                 title: 'Financial Reports',
@@ -320,12 +345,12 @@ const mainNavItems: NavItem[] = [
         items: [
             {
                 title: 'General Settings',
-                href: '/settings/general',
+                href: '/settings/rbac/general',
                 icon: Settings,
             },
             {
                 title: 'User Management',
-                href: '/settings/users',
+                href: '/settings/rbac/users-management',
                 icon: Users,
             },
             {
@@ -335,12 +360,12 @@ const mainNavItems: NavItem[] = [
             },
             {
                 title: 'System Configuration',
-                href: '/settings/system',
+                href: '/settings/rbac/system',
                 icon: Settings,
             },
             {
                 title: 'Backup & Restore',
-                href: '/settings/backup',
+                href: '/settings/rbac/backup',
                 icon: Folder,
             },
         ],

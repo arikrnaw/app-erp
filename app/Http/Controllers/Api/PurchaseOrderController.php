@@ -3,307 +3,442 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
+use App\Models\Purchasing\PurchaseOrder;
+use App\Models\Finance\ApprovalWorkflow;
+use App\Models\Finance\ApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class PurchaseOrderController extends Controller
 {
     /**
-     * Display a listing of purchase orders
+     * Get purchase orders with approval status
      */
     public function index(Request $request): JsonResponse
     {
-        $query = PurchaseOrder::with(['supplier', 'createdByUser', 'items.product'])
-            ->orderBy('created_at', 'desc');
+        try {
+            $query = PurchaseOrder::with(['supplier', 'items', 'approvalRequest'])
+                ->when($request->has('status'), function ($q) use ($request) {
+                    $q->where('status', $request->status);
+                })
+                ->when($request->has('supplier_id'), function ($q) use ($request) {
+                    $q->where('supplier_id', $request->supplier_id);
+                })
+                ->when($request->has('date_from'), function ($q) use ($request) {
+                    $q->where('order_date', '>=', $request->date_from);
+                })
+                ->when($request->has('date_to'), function ($q) use ($request) {
+                    $q->where('order_date', '<=', $request->date_to);
+                });
 
-        // Apply search filter
-        if ($request->filled('search')) {
-            $query->search($request->search);
+            $purchaseOrders = $query->orderBy('created_at', 'desc')
+                ->paginate($request->get('per_page', 15));
+
+            return response()->json([
+                'success' => true,
+                'data' => $purchaseOrders
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading purchase orders: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Apply status filter
-        if ($request->filled('status')) {
-            $query->status($request->status);
-        }
-
-        // Apply date filter
-        if ($request->filled('date_filter')) {
-            $query->dateFilter($request->date_filter);
-        }
-
-        $purchaseOrders = $query->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'data' => $purchaseOrders->items(),
-            'links' => $purchaseOrders->linkCollection(),
-            'meta' => [
-                'current_page' => $purchaseOrders->currentPage(),
-                'from' => $purchaseOrders->firstItem(),
-                'last_page' => $purchaseOrders->lastPage(),
-                'per_page' => $purchaseOrders->perPage(),
-                'to' => $purchaseOrders->lastItem(),
-                'total' => $purchaseOrders->total(),
-            ]
-        ]);
     }
 
     /**
-     * Store a newly created purchase order
+     * Create purchase order with approval workflow
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'po_number' => 'required|string|max:50|unique:purchase_orders',
-            'supplier_id' => 'required|exists:suppliers,id',
-            'order_date' => 'required|date',
-            'expected_delivery_date' => 'nullable|date|after_or_equal:order_date',
-            'status' => ['required', Rule::in(['draft', 'confirmed', 'received', 'cancelled'])],
-            'notes' => 'nullable|string|max:1000',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.description' => 'nullable|string|max:500',
-            'items.*.notes' => 'nullable|string|max:500',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
+            $validated = $request->validate([
+                'supplier_id' => 'required|exists:suppliers,id',
+                'order_date' => 'required|date',
+                'expected_delivery_date' => 'required|date|after:order_date',
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.unit_price' => 'required|numeric|min:0',
+                'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
+                'shipping_cost' => 'nullable|numeric|min:0',
+                'notes' => 'nullable|string',
+                'terms_conditions' => 'nullable|string',
+            ]);
+
             DB::beginTransaction();
 
+            // Calculate total amount
+            $subtotal = collect($validated['items'])->sum(function ($item) {
+                return $item['quantity'] * $item['unit_price'];
+            });
+
+            $taxAmount = collect($validated['items'])->sum(function ($item) {
+                $taxRate = $item['tax_rate'] ?? 0;
+                return ($item['quantity'] * $item['unit_price']) * ($taxRate / 100);
+            });
+
+            $totalAmount = $subtotal + $taxAmount + ($validated['shipping_cost'] ?? 0);
+
+            // Create purchase order
             $purchaseOrder = PurchaseOrder::create([
-                'po_number' => $request->po_number,
-                'supplier_id' => $request->supplier_id,
-                'order_date' => $request->order_date,
-                'expected_delivery_date' => $request->expected_delivery_date,
-                'status' => $request->status,
-                'notes' => $request->notes,
-                'created_by' => $request->user()->id,
-                'updated_by' => $request->user()->id,
+                'supplier_id' => $validated['supplier_id'],
+                'order_date' => $validated['order_date'],
+                'expected_delivery_date' => $validated['expected_delivery_date'],
+                'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount,
+                'shipping_cost' => $validated['shipping_cost'] ?? 0,
+                'total_amount' => $totalAmount,
+                'notes' => $validated['notes'],
+                'terms_conditions' => $validated['terms_conditions'],
+                'status' => 'draft',
+                'created_by' => Auth::id(),
             ]);
 
-            // Create purchase order items
-            foreach ($request->items as $item) {
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $purchaseOrder->id,
+            // Create order items
+            foreach ($validated['items'] as $item) {
+                $purchaseOrder->items()->create([
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'description' => $item['description'] ?? null,
-                    'notes' => $item['notes'] ?? null,
+                    'tax_rate' => $item['tax_rate'] ?? 0,
+                    'total_price' => $item['quantity'] * $item['unit_price'],
                 ]);
             }
 
-            // Calculate total amount
-            $purchaseOrder->calculateTotalAmount();
+            // Check if approval is required
+            $this->checkApprovalRequired($purchaseOrder, $totalAmount);
 
             DB::commit();
 
-            $purchaseOrder->load(['supplier', 'createdByUser', 'items.product']);
-
             return response()->json([
+                'success' => true,
                 'message' => 'Purchase order created successfully',
-                'purchase_order' => $purchaseOrder
+                'data' => $purchaseOrder->load(['supplier', 'items', 'approvalRequest'])
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Failed to create purchase order',
-                'error' => $e->getMessage()
+                'success' => false,
+                'message' => 'Error creating purchase order: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Display the specified purchase order
+     * Update purchase order
      */
-    public function show(PurchaseOrder $purchaseOrder): JsonResponse
+    public function update(Request $request, int $id): JsonResponse
     {
-        $purchaseOrder->load(['supplier', 'createdByUser', 'updatedByUser', 'items.product']);
+        try {
+            $purchaseOrder = PurchaseOrder::findOrFail($id);
 
-        return response()->json([
-            'data' => $purchaseOrder
-        ]);
+            // Check if PO can be updated (not in approval process)
+            if ($purchaseOrder->approvalRequest && $purchaseOrder->approvalRequest->status === 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot update purchase order while approval is pending'
+                ], 400);
+            }
+
+            $validated = $request->validate([
+                'supplier_id' => 'sometimes|exists:suppliers,id',
+                'order_date' => 'sometimes|date',
+                'expected_delivery_date' => 'sometimes|date|after:order_date',
+                'shipping_cost' => 'nullable|numeric|min:0',
+                'notes' => 'nullable|string',
+                'terms_conditions' => 'nullable|string',
+            ]);
+
+            DB::beginTransaction();
+
+            $purchaseOrder->update($validated);
+
+            // Recalculate total if items changed
+            if ($request->has('items')) {
+                $this->updateOrderItems($purchaseOrder, $request->items);
+                $this->recalculateTotal($purchaseOrder);
+            }
+
+            // Check if approval is still required
+            $this->checkApprovalRequired($purchaseOrder, $purchaseOrder->total_amount);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase order updated successfully',
+                'data' => $purchaseOrder->load(['supplier', 'items', 'approvalRequest'])
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating purchase order: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Update the specified purchase order
+     * Submit purchase order for approval
      */
-    public function update(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
+    public function submitForApproval(int $id): JsonResponse
     {
-        if (!$purchaseOrder->canBeEdited()) {
-            return response()->json([
-                'message' => 'Purchase order cannot be edited in its current status'
-            ], 422);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'po_number' => ['required', 'string', 'max:50', Rule::unique('purchase_orders')->ignore($purchaseOrder->id)],
-            'supplier_id' => 'required|exists:suppliers,id',
-            'order_date' => 'required|date',
-            'expected_delivery_date' => 'nullable|date|after_or_equal:order_date',
-            'status' => ['required', Rule::in(['draft', 'confirmed', 'received', 'cancelled'])],
-            'notes' => 'nullable|string|max:1000',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.description' => 'nullable|string|max:500',
-            'items.*.notes' => 'nullable|string|max:500',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
-            DB::beginTransaction();
+            $purchaseOrder = PurchaseOrder::findOrFail($id);
 
-            $purchaseOrder->update([
-                'po_number' => $request->po_number,
-                'supplier_id' => $request->supplier_id,
-                'order_date' => $request->order_date,
-                'expected_delivery_date' => $request->expected_delivery_date,
-                'status' => $request->status,
-                'notes' => $request->notes,
-                'updated_by' => $request->user()->id,
-            ]);
+            // Check if already submitted
+            if ($purchaseOrder->approvalRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase order already submitted for approval'
+                ], 400);
+            }
 
-            // Delete existing items
-            $purchaseOrder->items()->delete();
-
-            // Create new items
-            foreach ($request->items as $item) {
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $purchaseOrder->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'description' => $item['description'] ?? null,
-                    'notes' => $item['notes'] ?? null,
+            // Check if approval is required
+            $workflow = $this->getApprovalWorkflow($purchaseOrder->total_amount);
+            if (!$workflow) {
+                // Auto-approve if no workflow found
+                $purchaseOrder->update(['status' => 'approved']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Purchase order auto-approved',
+                    'data' => $purchaseOrder
                 ]);
             }
 
-            // Calculate total amount
-            $purchaseOrder->calculateTotalAmount();
-
-            DB::commit();
-
-            $purchaseOrder->load(['supplier', 'createdByUser', 'updatedByUser', 'items.product']);
-
-            return response()->json([
-                'message' => 'Purchase order updated successfully',
-                'purchase_order' => $purchaseOrder
+            // Create approval request
+            $approvalRequest = ApprovalRequest::create([
+                'workflow_id' => $workflow->id,
+                'requestor_id' => Auth::id(),
+                'approvable_type' => PurchaseOrder::class,
+                'approvable_id' => $purchaseOrder->id,
+                'amount' => $purchaseOrder->total_amount,
+                'description' => "Purchase Order #{$purchaseOrder->id} - {$purchaseOrder->supplier->name}",
+                'priority' => $this->determinePriority($purchaseOrder->total_amount),
+                'due_date' => now()->addDays(3),
+                'status' => 'pending',
             ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
+            // Assign first level approver
+            $firstLevel = $workflow->levels()->orderBy('level')->first();
+            if ($firstLevel) {
+                $approvalRequest->update([
+                    'approver_id' => $firstLevel->approver_id,
+                    'current_level' => $firstLevel->level,
+                ]);
+            }
+
+            // Update PO status
+            $purchaseOrder->update(['status' => 'pending_approval']);
+
             return response()->json([
-                'message' => 'Failed to update purchase order',
-                'error' => $e->getMessage()
+                'success' => true,
+                'message' => 'Purchase order submitted for approval',
+                'data' => $purchaseOrder->load(['supplier', 'items', 'approvalRequest'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error submitting for approval: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Remove the specified purchase order
+     * Get purchase order with approval details
      */
-    public function destroy(PurchaseOrder $purchaseOrder): JsonResponse
+    public function show(int $id): JsonResponse
     {
-        if (!$purchaseOrder->canBeDeleted()) {
-            return response()->json([
-                'message' => 'Purchase order cannot be deleted in its current status'
-            ], 422);
-        }
-
         try {
+            $purchaseOrder = PurchaseOrder::with([
+                'supplier', 
+                'items.product', 
+                'approvalRequest.workflow',
+                'approvalRequest.approver',
+                'approvalRequest.requestor'
+            ])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $purchaseOrder
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading purchase order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel purchase order
+     */
+    public function cancel(int $id): JsonResponse
+    {
+        try {
+            $purchaseOrder = PurchaseOrder::findOrFail($id);
+
+            // Check if can be cancelled
+            if (!in_array($purchaseOrder->status, ['draft', 'pending_approval'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase order cannot be cancelled in current status'
+                ], 400);
+            }
+
             DB::beginTransaction();
 
-            // Delete items first
-            $purchaseOrder->items()->delete();
-            
-            // Delete purchase order
-            $purchaseOrder->delete();
+            // Cancel approval request if exists
+            if ($purchaseOrder->approvalRequest) {
+                $purchaseOrder->approvalRequest->update([
+                    'status' => 'cancelled',
+                    'approver_comments' => 'Cancelled by requestor'
+                ]);
+            }
+
+            // Update PO status
+            $purchaseOrder->update(['status' => 'cancelled']);
 
             DB::commit();
 
             return response()->json([
-                'message' => 'Purchase order deleted successfully'
+                'success' => true,
+                'message' => 'Purchase order cancelled successfully',
+                'data' => $purchaseOrder
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Failed to delete purchase order',
-                'error' => $e->getMessage()
+                'success' => false,
+                'message' => 'Error cancelling purchase order: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Update purchase order status
+     * Get purchase orders pending approval
      */
-    public function updateStatus(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
+    public function pendingApproval(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'status' => ['required', Rule::in(['draft', 'confirmed', 'received', 'cancelled'])],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $newStatus = $request->status;
-
-        // Validate status transition
-        if ($newStatus === 'cancelled' && !$purchaseOrder->canBeCancelled()) {
-            return response()->json([
-                'message' => 'Purchase order cannot be cancelled in its current status'
-            ], 422);
-        }
-
-        if ($newStatus === 'received' && !$purchaseOrder->canBeReceived()) {
-            return response()->json([
-                'message' => 'Purchase order cannot be marked as received in its current status'
-            ], 422);
-        }
-
         try {
-            $purchaseOrder->update([
-                'status' => $newStatus,
-                'updated_by' => $request->user()->id,
-            ]);
+            $query = PurchaseOrder::with(['supplier', 'approvalRequest.workflow'])
+                ->whereHas('approvalRequest', function ($q) {
+                    $q->where('status', 'pending');
+                });
 
-            $purchaseOrder->load(['supplier', 'createdByUser', 'updatedByUser', 'items.product']);
+            $purchaseOrders = $query->orderBy('created_at', 'desc')
+                ->paginate($request->get('per_page', 15));
 
             return response()->json([
-                'message' => 'Purchase order status updated successfully',
-                'purchase_order' => $purchaseOrder
+                'success' => true,
+                'data' => $purchaseOrders
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to update purchase order status',
-                'error' => $e->getMessage()
+                'success' => false,
+                'message' => 'Error loading pending approvals: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Check if approval is required and create approval request
+     */
+    private function checkApprovalRequired(PurchaseOrder $purchaseOrder, float $totalAmount): void
+    {
+        $workflow = $this->getApprovalWorkflow($totalAmount);
+        
+        if ($workflow) {
+            // Create approval request
+            $approvalRequest = ApprovalRequest::create([
+                'workflow_id' => $workflow->id,
+                'requestor_id' => Auth::id(),
+                'approvable_type' => PurchaseOrder::class,
+                'approvable_id' => $purchaseOrder->id,
+                'amount' => $totalAmount,
+                'description' => "Purchase Order #{$purchaseOrder->id} - {$purchaseOrder->supplier->name}",
+                'priority' => $this->determinePriority($totalAmount),
+                'due_date' => now()->addDays(3),
+                'status' => 'pending',
+            ]);
+
+            // Assign first level approver
+            $firstLevel = $workflow->levels()->orderBy('level')->first();
+            if ($firstLevel) {
+                $approvalRequest->update([
+                    'approver_id' => $firstLevel->approver_id,
+                    'current_level' => $firstLevel->level,
+                ]);
+            }
+
+            // Update PO status
+            $purchaseOrder->update(['status' => 'pending_approval']);
+        } else {
+            // Auto-approve if no workflow found
+            $purchaseOrder->update(['status' => 'approved']);
+        }
+    }
+
+    /**
+     * Get appropriate approval workflow based on amount
+     */
+    private function getApprovalWorkflow(float $amount): ?ApprovalWorkflow
+    {
+        return ApprovalWorkflow::active()
+            ->byType('purchase_order')
+            ->byThreshold($amount)
+            ->first();
+    }
+
+    /**
+     * Determine priority based on amount
+     */
+    private function determinePriority(float $amount): string
+    {
+        if ($amount >= 100000) return 'urgent';
+        if ($amount >= 50000) return 'high';
+        if ($amount >= 10000) return 'medium';
+        return 'low';
+    }
+
+    /**
+     * Update order items
+     */
+    private function updateOrderItems(PurchaseOrder $purchaseOrder, array $items): void
+    {
+        // Delete existing items
+        $purchaseOrder->items()->delete();
+
+        // Create new items
+        foreach ($items as $item) {
+            $purchaseOrder->items()->create([
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $item['unit_price'],
+                'tax_rate' => $item['tax_rate'] ?? 0,
+                'total_price' => $item['quantity'] * $item['unit_price'],
+            ]);
+        }
+    }
+
+    /**
+     * Recalculate total amount
+     */
+    private function recalculateTotal(PurchaseOrder $purchaseOrder): void
+    {
+        $subtotal = $purchaseOrder->items->sum('total_price');
+        $taxAmount = $purchaseOrder->items->sum(function ($item) {
+            return $item->total_price * ($item->tax_rate / 100);
+        });
+        $totalAmount = $subtotal + $taxAmount + ($purchaseOrder->shipping_cost ?? 0);
+
+        $purchaseOrder->update([
+            'subtotal' => $subtotal,
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+        ]);
     }
 }

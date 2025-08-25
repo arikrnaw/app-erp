@@ -63,8 +63,8 @@
                             <CardContent class="space-y-4">
                                 <div>
                                     <Label class="text-sm font-medium text-gray-500">Current Balance</Label>
-                                    <p class="text-lg font-bold" :class="getBalanceColor(account.balance)">
-                                        {{ formatCurrency(account.balance) }}
+                                    <p class="text-lg font-bold" :class="getBalanceColor(account.balance || 0)">
+                                        {{ formatCurrency(account.balance || 0) }}
                                     </p>
                                 </div>
                                 <div>
@@ -125,8 +125,8 @@
                                             </TableCell>
                                             <TableCell>
                                                 <div class="text-sm font-medium"
-                                                    :class="getBalanceColor(child.balance)">
-                                                    {{ formatCurrency(child.balance) }}
+                                                    :class="getBalanceColor(child.balance || 0)">
+                                                    {{ formatCurrency(child.balance || 0) }}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -150,7 +150,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <Label class="text-sm font-medium text-gray-500">Created By</Label>
-                                    <p class="text-lg">{{ account.created_by_user?.name || 'N/A' }}</p>
+                                    <p class="text-lg">{{ (account as any).created_by_user?.name || 'N/A' }}</p>
                                 </div>
                                 <div>
                                     <Label class="text-sm font-medium text-gray-500">Created At</Label>
@@ -171,6 +171,7 @@
 
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -187,12 +188,12 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const breadcrumbs: BreadcrumbItemType[] = [
+const breadcrumbs = computed<BreadcrumbItemType[]>(() => [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Finance', href: '/finance' },
     { title: 'Chart of Accounts', href: '/finance/chart-of-accounts' },
     { title: props.account.name, href: `/finance/chart-of-accounts/${props.account.id}` }
-]
+])
 
 const formatDate = (dateString: string): string => {
     if (!dateString) return 'N/A'
