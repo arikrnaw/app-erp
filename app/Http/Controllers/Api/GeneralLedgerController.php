@@ -13,10 +13,13 @@ use Illuminate\Support\Facades\DB;
 class GeneralLedgerController extends Controller
 {
     /**
-     * Get general ledger data
+     * Get general ledger data with pagination
      */
     public function index(Request $request): JsonResponse
     {
+        $perPage = $request->get('per_page', 5);
+        $page = $request->get('page', 1);
+        
         $query = ChartOfAccount::where('company_id', Auth::user()->company_id);
 
         // Filter by account type
@@ -29,7 +32,8 @@ class GeneralLedgerController extends Controller
             $query->where('id', $request->account_id);
         }
 
-        $accounts = $query->get();
+        // Get paginated accounts
+        $accounts = $query->paginate($perPage, ['*'], 'page', $page);
 
         $ledgerData = [];
         $summary = [
@@ -39,7 +43,7 @@ class GeneralLedgerController extends Controller
             'net_income' => 0
         ];
 
-        foreach ($accounts as $account) {
+        foreach ($accounts->items() as $account) {
             // Get opening balance (balance before date range)
             $openingBalance = $this->getOpeningBalance($account->id, $request->date_from);
             
@@ -59,8 +63,8 @@ class GeneralLedgerController extends Controller
                 'opening_balance' => $openingBalance,
                 'total_debit' => $totalDebit,
                 'total_credit' => $totalCredit,
-                'closing_balance' => $openingBalance + $totalDebit - $totalCredit,
-                'balance' => $openingBalance + $totalDebit - $totalCredit,
+                'closing_balance' => $closingBalance,
+                'balance' => $closingBalance,
                 'debit' => $totalDebit,
                 'credit' => $totalCredit,
                 'description' => 'Account balance as of ' . now()->format('M d, Y'),
@@ -88,17 +92,31 @@ class GeneralLedgerController extends Controller
             }
         }
 
+        // Get all accounts for filter dropdown (not paginated)
+        $allAccounts = ChartOfAccount::where('company_id', Auth::user()->company_id)
+            ->select('id', 'account_code', 'name as account_name')
+            ->get();
+
         return response()->json([
             'data' => $ledgerData,
             'summary' => $summary,
-            'pagination' => null,
-            'accounts' => $accounts->map(function($account) {
-                return [
-                    'id' => $account->id,
-                    'account_code' => $account->account_code,
-                    'account_name' => $account->name
-                ];
-            })
+            'pagination' => [
+                'meta' => [
+                    'current_page' => $accounts->currentPage(),
+                    'last_page' => $accounts->lastPage(),
+                    'total' => $accounts->total(),
+                    'per_page' => $accounts->perPage(),
+                    'from' => $accounts->firstItem(),
+                    'to' => $accounts->lastItem()
+                ],
+                'links' => [
+                    'first' => $accounts->url(1),
+                    'last' => $accounts->url($accounts->lastPage()),
+                    'prev' => $accounts->previousPageUrl(),
+                    'next' => $accounts->nextPageUrl()
+                ]
+            ],
+            'accounts' => $allAccounts
         ]);
     }
 

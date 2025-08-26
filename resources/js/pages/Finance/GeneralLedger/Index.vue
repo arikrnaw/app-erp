@@ -92,11 +92,11 @@
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div class="space-y-2">
               <Label for="account_filter">Account</Label>
               <Select v-model="filters.account_id" @update:model-value="fetchLedger">
-                <SelectTrigger>
+                <SelectTrigger class="w-full">
                   <SelectValue placeholder="All Accounts" />
                 </SelectTrigger>
                 <SelectContent>
@@ -121,7 +121,7 @@
             <div class="space-y-2">
               <Label for="type_filter">Account Type</Label>
               <Select v-model="filters.type" @update:model-value="fetchLedger">
-                <SelectTrigger>
+                <SelectTrigger class="w-full">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
@@ -226,7 +226,7 @@
           <!-- Pagination -->
           <DataPagination v-if="pagination && pagination.meta && pagination.meta.last_page > 1"
             :current-page="pagination.meta.current_page" :total-pages="pagination.meta.last_page"
-            :total-items="pagination.meta.total" :per-page="pagination.meta.per_page || 15" class="mt-6"
+            :total-items="pagination.meta.total" :per-page="pagination.meta.per_page || 5" class="mt-6"
             @page-change="changePage" />
         </CardContent>
       </Card>
@@ -318,7 +318,8 @@ const fetchLedger = async () => {
       date_from: filters.value.date_from,
       date_to: filters.value.date_to,
       type: filters.value.type === 'all' ? '' : filters.value.type,
-      page: pagination.value?.meta?.current_page || 1
+      page: pagination.value?.meta?.current_page || 1,
+      per_page: 5
     }
 
     const response = await apiService.getGeneralLedger(apiFilters)
