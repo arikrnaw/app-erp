@@ -3,144 +3,198 @@
     <Head title="Edit Chart of Account" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="container mx-auto py-6 space-y-6">
-            <!-- Header -->
+        <div class="p-6 space-y-6">
+            <!-- Header Section -->
             <div class="flex items-center justify-between">
-                <div class="space-y-1">
+                <div>
                     <h1 class="text-3xl font-bold tracking-tight">Edit Chart of Account</h1>
-                    <p class="text-muted-foreground">
+                    <p class="text-muted-foreground mt-1">
                         Update the account details and configuration
                     </p>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <Link :href="route('finance.chart-of-accounts.index')">
-                    <Button variant="outline" size="sm">
-                        <ArrowLeft class="h-4 w-4 mr-2" />
-                        Back to Accounts
-                    </Button>
-                    </Link>
-                </div>
+                <Link :href="route('finance.chart-of-accounts.index')">
+                <Button variant="outline">
+                    <ArrowLeft class="h-4 w-4 mr-2" />
+                    Back to Accounts
+                </Button>
+                </Link>
             </div>
 
-            <!-- Main Form Card -->
-            <Card>
-                <CardHeader>
-                    <CardTitle class="flex items-center space-x-2">
-                        <BookOpen class="h-5 w-5 text-primary" />
-                        <span>Account Information</span>
-                    </CardTitle>
-                    <CardDescription>
+            <!-- Form Card -->
+            <Card class="shadow-sm border-border">
+                <CardHeader class="border-b border-border bg-muted/30">
+                    <CardTitle class="text-xl font-semibold">Account Information</CardTitle>
+                    <CardDescription class="text-muted-foreground">
                         Modify the account details, type, and hierarchy settings
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent class="p-6">
                     <form @submit.prevent="submit" class="space-y-6">
-                        <!-- Account Details Section -->
-                        <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-foreground">Basic Details</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                    <Label for="account_code">Account Code</Label>
-                                    <Input id="account_code" v-model="form.account_code" placeholder="e.g., 1000, 2000"
-                                        required />
-                                    <InputError :message="form.errors.account_code" class="mt-1" />
-                                </div>
+                        <!-- Account Details -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Account Code -->
+                            <div class="space-y-3">
+                                <Label for="account_code" class="text-sm font-medium">Account Code *</Label>
+                                <Input id="account_code" v-model="form.account_code" placeholder="e.g., 1000, 2000"
+                                    class="h-10"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.account_code }"
+                                    required />
+                                <p class="text-sm text-muted-foreground">
+                                    Unique identifier for the account
+                                </p>
+                                <p v-if="form.errors.account_code" class="text-sm text-destructive">
+                                    {{ form.errors.account_code }}
+                                </p>
+                            </div>
 
-                                <div class="space-y-2">
-                                    <Label for="name">Account Name</Label>
-                                    <Input id="name" v-model="form.name" placeholder="e.g., Cash, Accounts Payable"
-                                        required />
-                                    <InputError :message="form.errors.name" class="mt-1" />
-                                </div>
+                            <!-- Account Name -->
+                            <div class="space-y-3">
+                                <Label for="name" class="text-sm font-medium">Account Name *</Label>
+                                <Input id="name" v-model="form.name" placeholder="e.g., Cash, Accounts Payable"
+                                    class="h-10"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.name }"
+                                    required />
+                                <p class="text-sm text-muted-foreground">
+                                    Descriptive name for the account
+                                </p>
+                                <p v-if="form.errors.name" class="text-sm text-destructive">
+                                    {{ form.errors.name }}
+                                </p>
                             </div>
                         </div>
 
-                        <!-- Account Configuration Section -->
-                        <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-foreground">Configuration</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                    <Label for="type">Account Type</Label>
-                                    <Select v-model="form.type" required>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select account type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="asset">Asset</SelectItem>
-                                            <SelectItem value="liability">Liability</SelectItem>
-                                            <SelectItem value="equity">Equity</SelectItem>
-                                            <SelectItem value="revenue">Revenue</SelectItem>
-                                            <SelectItem value="expense">Expense</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError :message="form.errors.type" class="mt-1" />
-                                </div>
+                        <!-- Account Type and Parent -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Account Type -->
+                            <div class="space-y-3 w-full">
+                                <Label for="type" class="text-sm font-medium">Account Type *</Label>
+                                <Select v-model="form.type" class="w-full"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.type }" required>
+                                    <SelectTrigger class="h-10 w-full">
+                                        <SelectValue placeholder="Select account type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="asset">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
+                                                Asset
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="liability">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 bg-secondary rounded-full mr-2"></div>
+                                                Liability
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="equity">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 bg-accent rounded-full mr-2"></div>
+                                                Equity
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="revenue">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
+                                                Revenue
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="expense">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 bg-destructive rounded-full mr-2"></div>
+                                                Expense
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p class="text-sm text-muted-foreground">
+                                    The type of account determines how it's classified
+                                </p>
+                                <p v-if="form.errors.type" class="text-sm text-destructive">
+                                    {{ form.errors.type }}
+                                </p>
+                            </div>
 
-                                <div class="space-y-2">
-                                    <Label for="parent_id">Parent Account</Label>
-                                    <Select v-model="form.parent_id">
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="No parent (root account)" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="null">No Parent (Root Account)</SelectItem>
-                                            <SelectItem v-for="account in parentAccounts" :key="account?.id"
-                                                :value="account?.id" :disabled="account?.id === props.account.id">
-                                                {{ account?.account_code }} - {{ account?.name }}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError :message="form.errors.parent_id" class="mt-1" />
-                                </div>
+                            <!-- Parent Account -->
+                            <div class="space-y-3">
+                                <Label for="parent_id" class="text-sm font-medium">Parent Account</Label>
+                                <Select v-model="form.parent_id" class="w-full"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.parent_id }">
+                                    <SelectTrigger class="h-10 w-full">
+                                        <SelectValue placeholder="No parent (root account)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="null">No parent (root account)</SelectItem>
+                                        <SelectItem v-for="account in parentAccounts" :key="account?.id"
+                                            :value="account?.id" :disabled="account?.id === props.account.id">
+                                            {{ account?.account_code }} - {{ account?.name }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p class="text-sm text-muted-foreground">
+                                    Optional parent account for hierarchical structure
+                                </p>
+                                <p v-if="form.errors.parent_id" class="text-sm text-destructive">
+                                    {{ form.errors.parent_id }}
+                                </p>
                             </div>
                         </div>
 
-                        <!-- Additional Details Section -->
-                        <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-foreground">Additional Details</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                    <Label for="description">Description</Label>
-                                    <Textarea id="description" v-model="form.description" rows="3"
-                                        placeholder="Enter a detailed description of this account..."
-                                        class="resize-none" />
-                                    <InputError :message="form.errors.description" class="mt-1" />
-                                </div>
+                        <!-- Description and Status -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Description -->
+                            <div class="space-y-3">
+                                <Label for="description" class="text-sm font-medium">Description</Label>
+                                <Textarea id="description" v-model="form.description" rows="3"
+                                    placeholder="Enter a detailed description of this account..." />
+                                <p class="text-sm text-muted-foreground">
+                                    Optional detailed description
+                                </p>
+                                <p v-if="form.errors.description" class="text-sm text-destructive">
+                                    {{ form.errors.description }}
+                                </p>
+                            </div>
 
-                                <div class="space-y-2">
-                                    <Label for="status">Status</Label>
-                                    <Select v-model="form.status" required>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="active">
-                                                <div class="flex items-center space-x-2">
-                                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                    <span>Active</span>
-                                                </div>
-                                            </SelectItem>
-                                            <SelectItem value="inactive">
-                                                <div class="flex items-center space-x-2">
-                                                    <div class="w-2 h-2 bg-gray-500 rounded-full"></div>
-                                                    <span>Inactive</span>
-                                                </div>
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError :message="form.errors.status" class="mt-1" />
-                                </div>
+                            <!-- Status -->
+                            <div class="space-y-3">
+                                <Label for="status" class="text-sm font-medium">Status *</Label>
+                                <Select v-model="form.status" class="w-full"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.status }"
+                                    required>
+                                    <SelectTrigger class="h-10 w-full">
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="active">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
+                                                Active
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="inactive">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 bg-muted-foreground rounded-full mr-2"></div>
+                                                Inactive
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p class="text-sm text-muted-foreground">
+                                    Account status determines if it can be used in transactions
+                                </p>
+                                <p v-if="form.errors.status" class="text-sm text-destructive">
+                                    {{ form.errors.status }}
+                                </p>
                             </div>
                         </div>
 
                         <!-- Form Actions -->
-                        <div class="flex items-center justify-end space-x-3 pt-6 border-t">
+                        <div class="flex items-center justify-end space-x-3 pt-6 border-t border-border">
                             <Link :href="route('finance.chart-of-accounts.index')">
-                            <Button variant="outline" type="button">
+                            <Button variant="outline" type="button" class="h-10 px-4">
                                 Cancel
                             </Button>
                             </Link>
-                            <Button type="submit" :disabled="isSubmitting" class="min-w-[120px]">
+                            <Button type="submit" :disabled="isSubmitting" class="h-10 px-6">
                                 <Loader2 v-if="isSubmitting" class="h-4 w-4 mr-2 animate-spin" />
                                 <Save v-else class="h-4 w-4 mr-2" />
                                 {{ isSubmitting ? 'Updating...' : 'Update Account' }}
@@ -157,14 +211,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
-import InputError from '@/components/InputError.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, BookOpen, Save, Loader2 } from 'lucide-vue-next'
+import { ArrowLeft, Save, Loader2 } from 'lucide-vue-next'
 import { apiService } from '@/services/api'
 import type { ChartOfAccount } from '@/types/erp'
 import type { BreadcrumbItemType } from '@/types'
@@ -223,8 +276,12 @@ const submit = async (): Promise<void> => {
         // Call API service
         await apiService.updateChartOfAccount(props.account.id, updateData)
 
-        // Show success message and redirect
-        alert('Account updated successfully!')
+        // Show success toast
+        if (typeof window !== 'undefined' && window.toast) {
+            window.toast.success('Account Updated!', 'Chart of account has been updated successfully')
+        }
+
+        // Redirect to index page on success
         window.location.href = route('finance.chart-of-accounts.index')
     } catch (error: any) {
         console.error('Error updating account:', error)
@@ -239,7 +296,11 @@ const submit = async (): Promise<void> => {
             })
         } else {
             // Show general error
-            alert('Failed to update account. Please try again.')
+            if (typeof window !== 'undefined' && window.toast) {
+                window.toast.error('Error!', 'Failed to update account. Please try again.')
+            } else {
+                alert('Failed to update account. Please try again.')
+            }
         }
     } finally {
         isSubmitting.value = false

@@ -21,41 +21,43 @@
             </div>
 
             <!-- Form Card -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Account Information</CardTitle>
-                    <CardDescription>
+            <Card class="shadow-sm border-border">
+                <CardHeader class="border-b border-border bg-muted/30">
+                    <CardTitle class="text-xl font-semibold">Account Information</CardTitle>
+                    <CardDescription class="text-muted-foreground">
                         Fill in the details below to create a new chart of account
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent class="p-6">
                     <form @submit.prevent="submit" class="space-y-6">
                         <!-- Account Details -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Account Code -->
-                            <div class="space-y-2">
-                                <Label for="account_code">Account Code *</Label>
+                            <div class="space-y-3">
+                                <Label for="account_code" class="text-sm font-medium">Account Code *</Label>
                                 <Input id="account_code" v-model="form.account_code"
-                                    placeholder="e.g., 1000, 1100, 2000"
-                                    :class="{ 'border-red-500': form.errors.account_code }" required />
+                                    placeholder="e.g., 1000, 1100, 2000" class="h-10"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.account_code }"
+                                    required />
                                 <p class="text-sm text-muted-foreground">
                                     Unique identifier for the account
                                 </p>
-                                <p v-if="form.errors.account_code" class="text-sm text-red-600 dark:text-red-400">
+                                <p v-if="form.errors.account_code" class="text-sm text-destructive">
                                     {{ form.errors.account_code }}
                                 </p>
                             </div>
 
                             <!-- Account Name -->
-                            <div class="space-y-2">
-                                <Label for="name">Account Name *</Label>
+                            <div class="space-y-3">
+                                <Label for="name" class="text-sm font-medium">Account Name *</Label>
                                 <Input id="name" v-model="form.name"
-                                    placeholder="e.g., Cash, Accounts Receivable, Sales Revenue"
-                                    :class="{ 'border-red-500': form.errors.name }" required />
+                                    placeholder="e.g., Cash, Accounts Receivable, Sales Revenue" class="h-10"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.name }"
+                                    required />
                                 <p class="text-sm text-muted-foreground">
                                     Descriptive name for the account
                                 </p>
-                                <p v-if="form.errors.name" class="text-sm text-red-600 dark:text-red-400">
+                                <p v-if="form.errors.name" class="text-sm text-destructive">
                                     {{ form.errors.name }}
                                 </p>
                             </div>
@@ -64,40 +66,41 @@
                         <!-- Account Type and Parent -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Account Type -->
-                            <div class="space-y-2">
-                                <Label for="type">Account Type *</Label>
-                                <Select v-model="form.type" :class="{ 'border-red-500': form.errors.type }">
-                                    <SelectTrigger>
+                            <div class="space-y-3 w-full">
+                                <Label for="type" class="text-sm font-medium">Account Type *</Label>
+                                <Select v-model="form.type" class="w-full"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.type }">
+                                    <SelectTrigger class="h-10 w-full">
                                         <SelectValue placeholder="Select account type" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="asset">
                                             <div class="flex items-center">
-                                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                                <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
                                                 Asset
                                             </div>
                                         </SelectItem>
                                         <SelectItem value="liability">
                                             <div class="flex items-center">
-                                                <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                                                <div class="w-3 h-3 bg-secondary rounded-full mr-2"></div>
                                                 Liability
                                             </div>
                                         </SelectItem>
                                         <SelectItem value="equity">
                                             <div class="flex items-center">
-                                                <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                                                <div class="w-3 h-3 bg-accent rounded-full mr-2"></div>
                                                 Equity
                                             </div>
                                         </SelectItem>
                                         <SelectItem value="revenue">
                                             <div class="flex items-center">
-                                                <div class="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                                                <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
                                                 Revenue
                                             </div>
                                         </SelectItem>
                                         <SelectItem value="expense">
                                             <div class="flex items-center">
-                                                <div class="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                                                <div class="w-3 h-3 bg-destructive rounded-full mr-2"></div>
                                                 Expense
                                             </div>
                                         </SelectItem>
@@ -106,20 +109,21 @@
                                 <p class="text-sm text-muted-foreground">
                                     The type of account determines how it's classified
                                 </p>
-                                <p v-if="form.errors.type" class="text-sm text-red-600 dark:text-red-400">
+                                <p v-if="form.errors.type" class="text-sm text-destructive">
                                     {{ form.errors.type }}
                                 </p>
                             </div>
 
                             <!-- Parent Account -->
-                            <div class="space-y-2">
-                                <Label for="parent_id">Parent Account</Label>
-                                <Select v-model="form.parent_id" :class="{ 'border-red-500': form.errors.parent_id }">
-                                    <SelectTrigger>
+                            <div class="space-y-3">
+                                <Label for="parent_id" class="text-sm font-medium">Parent Account</Label>
+                                <Select v-model="form.parent_id"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.parent_id }">
+                                    <SelectTrigger class="h-10 w-full">
                                         <SelectValue placeholder="No parent (root account)" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">No parent (root account)</SelectItem>
+                                        <SelectItem value="null">No parent (root account)</SelectItem>
                                         <SelectItem v-for="account in parentAccounts" :key="account.id"
                                             :value="account.id">
                                             {{ account.account_code }} - {{ account.name }}
@@ -129,7 +133,7 @@
                                 <p class="text-sm text-muted-foreground">
                                     Optional parent account for hierarchical structure
                                 </p>
-                                <p v-if="form.errors.parent_id" class="text-sm text-red-600 dark:text-red-400">
+                                <p v-if="form.errors.parent_id" class="text-sm text-destructive">
                                     {{ form.errors.parent_id }}
                                 </p>
                             </div>
@@ -138,35 +142,36 @@
                         <!-- Description and Status -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Description -->
-                            <div class="space-y-2">
-                                <Label for="description">Description</Label>
+                            <div class="space-y-3">
+                                <Label for="description" class="text-sm font-medium">Description</Label>
                                 <Textarea id="description" v-model="form.description"
                                     placeholder="Enter detailed description of the account..." rows="3" />
                                 <p class="text-sm text-muted-foreground">
                                     Optional detailed description
                                 </p>
-                                <p v-if="form.errors.description" class="text-sm text-red-600 dark:text-red-400">
+                                <p v-if="form.errors.description" class="text-sm text-destructive">
                                     {{ form.errors.description }}
                                 </p>
                             </div>
 
                             <!-- Status -->
-                            <div class="space-y-2">
-                                <Label for="status">Status *</Label>
-                                <Select v-model="form.status" :class="{ 'border-red-500': form.errors.status }">
-                                    <SelectTrigger>
+                            <div class="space-y-3">
+                                <Label for="status" class="text-sm font-medium">Status *</Label>
+                                <Select v-model="form.status"
+                                    :class="{ 'border-destructive focus:ring-destructive': form.errors.status }">
+                                    <SelectTrigger class="h-10 w-full">
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="active">
                                             <div class="flex items-center">
-                                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                                <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
                                                 Active
                                             </div>
                                         </SelectItem>
                                         <SelectItem value="inactive">
                                             <div class="flex items-center">
-                                                <div class="w-3 h-3 bg-gray-500 rounded-full mr-2"></div>
+                                                <div class="w-3 h-3 bg-muted-foreground rounded-full mr-2"></div>
                                                 Inactive
                                             </div>
                                         </SelectItem>
@@ -175,34 +180,35 @@
                                 <p class="text-sm text-muted-foreground">
                                     Account status determines if it can be used in transactions
                                 </p>
-                                <p v-if="form.errors.status" class="text-sm text-red-600 dark:text-red-400">
+                                <p v-if="form.errors.status" class="text-sm text-destructive">
                                     {{ form.errors.status }}
                                 </p>
                             </div>
                         </div>
 
                         <!-- Initial Balance -->
-                        <div class="space-y-2">
-                            <Label for="balance">Initial Balance</Label>
+                        <div class="space-y-3">
+                            <Label for="balance" class="text-sm font-medium">Initial Balance</Label>
                             <Input id="balance" type="number" step="0.01" v-model="form.balance" placeholder="0.00"
-                                :class="{ 'border-red-500': form.errors.balance }" />
+                                class="h-10"
+                                :class="{ 'border-destructive focus:ring-destructive': form.errors.balance }" />
                             <p class="text-sm text-muted-foreground">
                                 Optional initial balance for the account (leave empty for zero)
                             </p>
-                            <p v-if="form.errors.balance" class="text-sm text-red-600 dark:text-red-400">
+                            <p v-if="form.errors.balance" class="text-sm text-destructive">
                                 {{ form.errors.balance }}
                             </p>
                         </div>
 
                         <!-- Form Actions -->
-                        <div class="flex items-center justify-end space-x-2 pt-6 border-t">
+                        <div class="flex items-center justify-end space-x-3 pt-6 border-t border-border">
                             <Link :href="route('finance.chart-of-accounts.index')">
-                            <Button variant="outline" type="button">
+                            <Button variant="outline" type="button" class="h-10 px-4">
                                 Cancel
                             </Button>
                             </Link>
-                            <Button type="submit" :disabled="form.processing"
-                                :class="{ 'opacity-50': form.processing }">
+                            <Button type="submit" :disabled="form.processing" class="h-10 px-6"
+                                :class="form.processing ? 'opacity-50' : ''">
                                 <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                 <Save v-else class="w-4 h-4 mr-2" />
                                 {{ form.processing ? 'Creating...' : 'Create Account' }}
@@ -213,55 +219,55 @@
             </Card>
 
             <!-- Account Type Information -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Account Type Guide</CardTitle>
-                    <CardDescription>
+            <Card class="shadow-sm border-border">
+                <CardHeader class="border-b border-border bg-muted/30">
+                    <CardTitle class="text-xl font-semibold">Account Type Guide</CardTitle>
+                    <CardDescription class="text-muted-foreground">
                         Understanding different account types and their purposes
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent class="p-6">
                     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex items-center mb-2">
-                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                <h4 class="font-medium">Assets</h4>
+                        <div class="p-4 border border-border rounded-lg bg-card hover:bg-muted/50 transition-colors">
+                            <div class="flex items-center mb-3">
+                                <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
+                                <h4 class="font-medium text-card-foreground">Assets</h4>
                             </div>
                             <p class="text-sm text-muted-foreground">
                                 Resources owned by the company (cash, inventory, equipment)
                             </p>
                         </div>
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex items-center mb-2">
-                                <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                                <h4 class="font-medium">Liabilities</h4>
+                        <div class="p-4 border border-border rounded-lg bg-card hover:bg-muted/50 transition-colors">
+                            <div class="flex items-center mb-3">
+                                <div class="w-3 h-3 bg-secondary rounded-full mr-2"></div>
+                                <h4 class="font-medium text-card-foreground">Liabilities</h4>
                             </div>
                             <p class="text-sm text-muted-foreground">
                                 Debts and obligations (loans, accounts payable, taxes)
                             </p>
                         </div>
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex items-center mb-2">
-                                <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                <h4 class="font-medium">Equity</h4>
+                        <div class="p-4 border border-border rounded-lg bg-card hover:bg-muted/50 transition-colors">
+                            <div class="flex items-center mb-3">
+                                <div class="w-3 h-3 bg-accent rounded-full mr-2"></div>
+                                <h4 class="font-medium text-card-foreground">Equity</h4>
                             </div>
                             <p class="text-sm text-muted-foreground">
                                 Owner's investment and retained earnings
                             </p>
                         </div>
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex items-center mb-2">
-                                <div class="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                                <h4 class="font-medium">Revenue</h4>
+                        <div class="p-4 border border-border rounded-lg bg-card hover:bg-muted/50 transition-colors">
+                            <div class="flex items-center mb-3">
+                                <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
+                                <h4 class="font-medium text-card-foreground">Revenue</h4>
                             </div>
                             <p class="text-sm text-muted-foreground">
                                 Income from business activities (sales, services)
                             </p>
                         </div>
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex items-center mb-2">
-                                <div class="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
-                                <h4 class="font-medium">Expenses</h4>
+                        <div class="p-4 border border-border rounded-lg bg-card hover:bg-muted/50 transition-colors">
+                            <div class="flex items-center mb-3">
+                                <div class="w-3 h-3 bg-destructive rounded-full mr-2"></div>
+                                <h4 class="font-medium text-card-foreground">Expenses</h4>
                             </div>
                             <p class="text-sm text-muted-foreground">
                                 Costs incurred in business operations
@@ -307,7 +313,7 @@ const form = useForm({
     name: '',
     description: '',
     type: '',
-    parent_id: '',
+    parent_id: 'null',
     balance: 0,
     status: 'active'
 })
@@ -316,7 +322,6 @@ const fetchParentAccounts = async () => {
     try {
         const response = await apiService.getChartOfAccounts({
             page: 1,
-            per_page: 100,
             status: 'active' // Only show active accounts as parents
         })
         parentAccounts.value = response.data || []
@@ -336,13 +341,18 @@ const submit = async (): Promise<void> => {
             name: form.name,
             description: form.description || null,
             type: form.type,
-            parent_id: form.parent_id || null,
-            balance: parseFloat(form.balance) || 0,
+            parent_id: form.parent_id === 'null' ? null : form.parent_id,
+            balance: form.balance.toString(),
             status: form.status
         }
 
         // Call API service
         await apiService.createChartOfAccount(accountData)
+
+        // Show success toast
+        if (typeof window !== 'undefined' && window.toast) {
+            window.toast.success('Account Created!', 'Chart of account has been created successfully')
+        }
 
         // Redirect to index page on success
         window.location.href = route('finance.chart-of-accounts.index')
@@ -354,7 +364,11 @@ const submit = async (): Promise<void> => {
             form.errors = error.response.data.errors
         } else {
             // Handle general error
-            alert('Error creating account. Please try again.')
+            if (typeof window !== 'undefined' && window.toast) {
+                window.toast.error('Error!', 'Failed to create account. Please try again.')
+            } else {
+                alert('Error creating account. Please try again.')
+            }
         }
     } finally {
         form.processing = false
