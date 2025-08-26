@@ -19,7 +19,7 @@ class TrialBalanceController extends Controller
         $query = ChartOfAccount::where('company_id', Auth::user()->company_id);
 
         // Filter by account type
-        if ($request->has('type') && $request->type) {
+        if ($request->has('type') && $request->type && $request->type !== 'all') {
             $query->where('type', $request->type);
         }
 
@@ -38,35 +38,42 @@ class TrialBalanceController extends Controller
             $creditBalance = 0;
 
             // Determine debit or credit balance based on account type
-            if ($balance > 0) {
-                if (in_array($account->type, ['asset', 'expense'])) {
+            // Asset and Expense accounts normally have debit balances
+            // Liability, Equity, and Revenue accounts normally have credit balances
+            if (in_array($account->type, ['asset', 'expense'])) {
+                if ($balance > 0) {
                     $debitBalance = $balance;
                 } else {
-                    $creditBalance = $balance;
+                    $creditBalance = abs($balance);
                 }
             } else {
-                if (in_array($account->type, ['asset', 'expense'])) {
-                    $creditBalance = abs($balance);
+                // Liability, Equity, Revenue accounts
+                if ($balance > 0) {
+                    $creditBalance = $balance;
                 } else {
                     $debitBalance = abs($balance);
                 }
             }
 
-            $trialBalanceData[] = [
-                'id' => $account->id,
-                'account_code' => $account->account_code,
-                'name' => $account->name,
-                'type' => $account->type,
-                'debit_balance' => $debitBalance,
-                'credit_balance' => $creditBalance
-            ];
+            // Only include accounts with non-zero balances
+            if ($debitBalance > 0 || $creditBalance > 0) {
+                $trialBalanceData[] = [
+                    'id' => $account->id,
+                    'account_code' => $account->account_code,
+                    'account_name' => $account->name,
+                    'description' => $account->description,
+                    'account_type' => $account->type,
+                    'debit_balance' => $debitBalance,
+                    'credit_balance' => $creditBalance
+                ];
 
-            $summary['total_debit'] += $debitBalance;
-            $summary['total_credit'] += $creditBalance;
+                $summary['total_debit'] += $debitBalance;
+                $summary['total_credit'] += $creditBalance;
+            }
         }
 
         return response()->json([
-            'accounts' => $trialBalanceData,
+            'data' => $trialBalanceData,
             'summary' => $summary
         ]);
     }

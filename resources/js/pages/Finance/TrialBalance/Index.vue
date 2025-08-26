@@ -87,7 +87,7 @@
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div class="space-y-2">
               <Label for="date_from">Date From</Label>
               <Input id="date_from" v-model="filters.date_from" type="date" @change="fetchTrialBalance" />
@@ -191,7 +191,7 @@
           </div>
 
           <!-- Totals Row -->
-          <div v-if="trialBalanceData.length > 0" class="mt-6 p-4 bg-muted/50 rounded-lg">
+          <div v-if="trialBalanceData.length > 0" class="mt-6 p-4 bg-muted/50 mb-4 rounded-lg">
             <div class="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p class="text-sm font-medium text-muted-foreground">Total Debit</p>
