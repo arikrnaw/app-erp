@@ -52,13 +52,20 @@ class GeneralLedgerController extends Controller
 
             $ledgerData[] = [
                 'id' => $account->id,
+                'date' => now()->toDateString(),
                 'account_code' => $account->account_code,
-                'name' => $account->name,
+                'account_name' => $account->name,
                 'type' => $account->type,
                 'opening_balance' => $openingBalance,
                 'total_debit' => $totalDebit,
                 'total_credit' => $totalCredit,
-                'closing_balance' => $closingBalance
+                'closing_balance' => $openingBalance + $totalDebit - $totalCredit,
+                'balance' => $openingBalance + $totalDebit - $totalCredit,
+                'debit' => $totalDebit,
+                'credit' => $totalCredit,
+                'description' => 'Account balance as of ' . now()->format('M d, Y'),
+                'reference_type' => 'Account',
+                'reference_id' => $account->id
             ];
 
             // Update summary
@@ -82,8 +89,16 @@ class GeneralLedgerController extends Controller
         }
 
         return response()->json([
-            'accounts' => $ledgerData,
-            'summary' => $summary
+            'data' => $ledgerData,
+            'summary' => $summary,
+            'pagination' => null,
+            'accounts' => $accounts->map(function($account) {
+                return [
+                    'id' => $account->id,
+                    'account_code' => $account->account_code,
+                    'account_name' => $account->name
+                ];
+            })
         ]);
     }
 
