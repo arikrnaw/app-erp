@@ -375,10 +375,12 @@ Route::middleware([
         return Inertia::render('Finance/JournalEntries/Create');
     })->name('finance.journal-entries.create');
     Route::get('finance/journal-entries/{id}', function ($id) {
-        return Inertia::render('Finance/JournalEntries/Show', ['id' => $id]);
+        $entry = \App\Models\JournalEntry::with('lines.account')->findOrFail($id);
+        return Inertia::render('Finance/JournalEntries/Show', ['entry' => $entry]);
     })->name('finance.journal-entries.show');
     Route::get('finance/journal-entries/{id}/edit', function ($id) {
-        return Inertia::render('Finance/JournalEntries/Edit', ['id' => $id]);
+        $entry = \App\Models\JournalEntry::with('lines.account')->findOrFail($id);
+        return Inertia::render('Finance/JournalEntries/Edit', ['entry' => $entry]);
     })->name('finance.journal-entries.edit');
 
     // Finance - General Ledger

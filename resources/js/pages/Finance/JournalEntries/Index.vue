@@ -1,4 +1,5 @@
 <template>
+
     <Head title="Journal Entries" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
@@ -17,31 +18,31 @@
                         Export
                     </Button>
                     <Link :href="route('finance.journal-entries.create')">
-                        <Button>
-                            <Plus class="w-4 h-4 mr-2" />
-                            Add Journal Entry
-                        </Button>
+                    <Button>
+                        <Plus class="w-4 h-4 mr-2" />
+                        Add Journal Entry
+                    </Button>
                     </Link>
                 </div>
             </div>
 
             <!-- Statistics Cards -->
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
+                <Card class="shadow-sm border-border">
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
-                            <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                <FileText class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            <div class="p-2 bg-primary/10 rounded-lg">
+                                <FileText class="h-6 w-6 text-primary" />
                             </div>
                             <div class="space-y-1">
                                 <p class="text-sm font-medium text-muted-foreground">Total Entries</p>
-                                <p class="text-2xl font-bold">{{ journalEntries.length }}</p>
+                                <p class="text-2xl font-bold text-card-foreground">{{ journalEntriesData.length }}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card class="shadow-sm border-border">
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
                             <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
@@ -49,13 +50,13 @@
                             </div>
                             <div class="space-y-1">
                                 <p class="text-sm font-medium text-muted-foreground">Posted Entries</p>
-                                <p class="text-2xl font-bold">{{ postedEntriesCount }}</p>
+                                <p class="text-2xl font-bold text-card-foreground">{{ postedEntriesCount }}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card class="shadow-sm border-border">
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
                             <div class="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
@@ -63,13 +64,13 @@
                             </div>
                             <div class="space-y-1">
                                 <p class="text-sm font-medium text-muted-foreground">Draft Entries</p>
-                                <p class="text-2xl font-bold">{{ draftEntriesCount }}</p>
+                                <p class="text-2xl font-bold text-card-foreground">{{ draftEntriesCount }}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card class="shadow-sm border-border">
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
                             <div class="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
@@ -77,7 +78,7 @@
                             </div>
                             <div class="space-y-1">
                                 <p class="text-sm font-medium text-muted-foreground">Total Amount</p>
-                                <p class="text-2xl font-bold">{{ formatCurrency(totalAmount) }}</p>
+                                <p class="text-2xl font-bold text-card-foreground">{{ formatCurrency(totalAmount) }}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -85,23 +86,21 @@
             </div>
 
             <!-- Search and Filters -->
-            <Card>
+            <Card class="shadow-sm border-border">
                 <CardContent class="p-6">
                     <div class="flex flex-col lg:flex-row gap-4">
                         <div class="flex-1">
                             <div class="relative">
-                                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                    v-model="searchQuery" 
-                                    placeholder="Search journal entries by number, description, or reference..." 
-                                    class="pl-10"
-                                    @input="debouncedSearch" 
-                                />
+                                <Search
+                                    class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input v-model="searchQuery"
+                                    placeholder="Search journal entries by number, description, or reference..."
+                                    class="pl-10 h-10" @input="debouncedSearch" />
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <Select v-model="statusFilter">
-                                <SelectTrigger class="w-[180px]">
+                                <SelectTrigger class="w-[180px] h-10">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -111,8 +110,8 @@
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Input type="date" v-model="dateFilter" class="w-[180px]" />
-                            <Button variant="outline" @click="clearFilters">
+                            <Input type="date" v-model="dateFilter" class="w-[180px] h-10" />
+                            <Button variant="outline" @click="clearFilters" class="h-10">
                                 <X class="h-4 w-4 mr-2" />
                                 Clear
                             </Button>
@@ -122,26 +121,30 @@
             </Card>
 
             <!-- Journal Entries Table -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Journal Entries</CardTitle>
-                    <CardDescription>
+            <Card class="shadow-sm border-border">
+                <CardHeader class="border-b border-border bg-muted/30">
+                    <CardTitle class="text-xl font-semibold">Journal Entries</CardTitle>
+                    <CardDescription class="text-muted-foreground">
                         View and manage your accounting journal entries
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div class="rounded-md border">
+                <CardContent class="p-6">
+                    <div class="rounded-md border border-border">
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead>Entry Number</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Reference</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead class="text-right">Total Debit</TableHead>
-                                    <TableHead class="text-right">Total Credit</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead class="text-right">Actions</TableHead>
+                                <TableRow class="border-border">
+                                    <TableHead class="text-sm font-medium text-muted-foreground">Entry Number
+                                    </TableHead>
+                                    <TableHead class="text-sm font-medium text-muted-foreground">Date</TableHead>
+                                    <TableHead class="text-sm font-medium text-muted-foreground">Reference</TableHead>
+                                    <TableHead class="text-sm font-medium text-muted-foreground">Description</TableHead>
+                                    <TableHead class="text-right text-sm font-medium text-muted-foreground">Total Debit
+                                    </TableHead>
+                                    <TableHead class="text-right text-sm font-medium text-muted-foreground">Total Credit
+                                    </TableHead>
+                                    <TableHead class="text-sm font-medium text-muted-foreground">Status</TableHead>
+                                    <TableHead class="text-right text-sm font-medium text-muted-foreground">Actions
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -153,7 +156,7 @@
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                                <TableRow v-else-if="filteredEntries.length === 0">
+                                <TableRow v-else-if="journalEntriesData.length === 0">
                                     <TableCell colspan="8" class="text-center py-12">
                                         <div class="flex flex-col items-center space-y-2">
                                             <FileText class="h-12 w-12 text-muted-foreground" />
@@ -161,14 +164,14 @@
                                                 <h3 class="text-lg font-medium">No journal entries found</h3>
                                                 <p class="text-muted-foreground">
                                                     {{ searchQuery || statusFilter !== 'all' || dateFilter
-                                                        ? 'Try adjusting your search or filters' 
+                                                        ? 'Try adjusting your search or filters'
                                                         : 'Get started by creating your first journal entry' }}
                                                 </p>
                                             </div>
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                                <TableRow v-else v-for="entry in filteredEntries" :key="entry.id">
+                                <TableRow v-else v-for="entry in journalEntriesData" :key="entry.id">
                                     <TableCell>
                                         <div class="font-mono text-sm font-medium">{{ entry.entry_number }}</div>
                                     </TableCell>
@@ -211,18 +214,19 @@
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem as-child>
                                                     <Link :href="route('finance.journal-entries.show', entry.id)">
-                                                        <Eye class="w-4 h-4 mr-2" />
-                                                        View Details
+                                                    <Eye class="w-4 h-4 mr-2" />
+                                                    View Details
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem as-child v-if="entry.status === 'draft'">
                                                     <Link :href="route('finance.journal-entries.edit', entry.id)">
-                                                        <Edit class="w-4 h-4 mr-2" />
-                                                        Edit Entry
+                                                    <Edit class="w-4 h-4 mr-2" />
+                                                    Edit Entry
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem @click="deleteEntry(entry.id)" class="text-destructive">
+                                                <DropdownMenuItem @click="deleteEntry(entry.id)"
+                                                    class="text-destructive">
                                                     <Trash2 class="w-4 h-4 mr-2" />
                                                     Delete Entry
                                                 </DropdownMenuItem>
@@ -235,32 +239,10 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div v-if="pagination && pagination.meta && pagination.meta.last_page > 1" 
-                         class="flex items-center justify-between mt-6">
-                        <div class="text-sm text-muted-foreground">
-                            Showing {{ pagination.meta.from }} to {{ pagination.meta.to }} of {{ pagination.meta.total }} results
-                        </div>
-                        <div class="flex gap-2">
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                :disabled="pagination.meta.current_page === 1"
-                                @click="changePage(pagination.meta.current_page - 1)"
-                            >
-                                <ChevronLeft class="h-4 w-4 mr-1" />
-                                Previous
-                            </Button>
-                            <Button 
-                                variant="outline" 
-                                size="sm"
-                                :disabled="pagination.meta.current_page === pagination.meta.last_page"
-                                @click="changePage(pagination.meta.current_page + 1)"
-                            >
-                                Next
-                                <ChevronRight class="h-4 w-4 ml-1" />
-                            </Button>
-                        </div>
-                    </div>
+                    <DataPagination v-if="paginationData && paginationData.total > 0"
+                        :current-page="paginationData.current_page" :total-pages="paginationData.last_page"
+                        :total-items="paginationData.total" :per-page="paginationData.per_page"
+                        @page-change="changePage" />
                 </CardContent>
             </Card>
         </div>
@@ -278,22 +260,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { 
-    Plus, 
-    MoreHorizontal, 
-    Eye, 
-    Edit, 
-    Trash2, 
-    Loader2, 
-    Search, 
-    X, 
-    FileText, 
-    CheckCircle, 
-    Clock, 
+import { DataPagination } from '@/components/ui/pagination'
+import {
+    Plus,
+    MoreHorizontal,
+    Eye,
+    Edit,
+    Trash2,
+    Loader2,
+    Search,
+    X,
+    FileText,
+    CheckCircle,
+    Clock,
     Calculator,
-    Download,
-    ChevronLeft,
-    ChevronRight
+    Download
 } from 'lucide-vue-next'
 import { apiService } from '@/services/api'
 import type { JournalEntry, PaginatedData } from '@/types/erp'
@@ -320,57 +301,40 @@ const searchQuery = ref('')
 const statusFilter = ref('all')
 const dateFilter = ref('')
 
+// Local state for API data
+const journalEntriesData = ref<JournalEntry[]>([])
+const paginationData = ref<any>(null)
+
 // Computed properties
 const postedEntriesCount = computed(() => {
-    return props.journalEntries.filter((entry: JournalEntry) => entry.status === 'posted').length
+    return journalEntriesData.value.filter((entry: JournalEntry) => entry.status === 'posted').length
 })
 
 const draftEntriesCount = computed(() => {
-    return props.journalEntries.filter((entry: JournalEntry) => entry.status === 'draft').length
+    return journalEntriesData.value.filter((entry: JournalEntry) => entry.status === 'draft').length
 })
 
 const totalAmount = computed(() => {
-    return props.journalEntries.reduce((sum: number, entry: JournalEntry) => {
-        return sum + (entry.total_debit || 0)
+    return journalEntriesData.value.reduce((sum: number, entry: JournalEntry) => {
+        return sum + (parseFloat(entry.total_debit?.toString() || '0'))
     }, 0)
-})
-
-const filteredEntries = computed(() => {
-    let filtered = props.journalEntries
-
-    if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
-        filtered = filtered.filter((entry: JournalEntry) =>
-            entry.entry_number?.toLowerCase().includes(query) ||
-            entry.description?.toLowerCase().includes(query) ||
-            entry.reference_type?.toLowerCase().includes(query)
-        )
-    }
-
-    if (statusFilter.value !== 'all') {
-        filtered = filtered.filter((entry: JournalEntry) => entry.status === statusFilter.value)
-    }
-
-    if (dateFilter.value) {
-        filtered = filtered.filter((entry: JournalEntry) => entry.entry_date === dateFilter.value)
-    }
-
-    return filtered
 })
 
 // Methods
 const debouncedSearch = () => {
     // Implement debounced search if needed
+    fetchJournalEntries()
 }
 
 const clearFilters = () => {
     searchQuery.value = ''
     statusFilter.value = 'all'
     dateFilter.value = ''
+    fetchJournalEntries()
 }
 
-const getStatusVariant = (status: string) => {
-    const variants: Record<string, string> = {
+const getStatusVariant = (status: string): "default" | "destructive" | "outline" | "secondary" | null | undefined => {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary" | null | undefined> = {
         'draft': 'secondary',
         'posted': 'default',
         'cancelled': 'destructive'
@@ -397,18 +361,48 @@ const deleteEntry = async (id: number) => {
     if (confirm('Are you sure you want to delete this journal entry?')) {
         try {
             await apiService.deleteJournalEntry(id)
-            router.reload()
+            await fetchJournalEntries() // Refresh data after deletion
         } catch (error) {
             console.error('Error deleting journal entry:', error)
         }
     }
 }
 
-const changePage = (page: number) => {
-    router.get(route('finance.journal-entries.index'), { page }, { preserveState: true })
+const changePage = async (page: number) => {
+    await fetchJournalEntries(page)
 }
 
-onMounted(() => {
-    // Initialize any necessary data
+const fetchJournalEntries = async (page: number = 1) => {
+    try {
+        loading.value = true
+
+        const response: any = await apiService.getJournalEntries({
+            search: searchQuery.value,
+            status: statusFilter.value !== 'all' ? statusFilter.value : undefined,
+            date: dateFilter.value || undefined,
+            page: page
+        })
+
+        // Update local state with API response data
+        journalEntriesData.value = response.data || []
+        paginationData.value = {
+            current_page: response.current_page,
+            last_page: response.last_page,
+            total: response.total,
+            per_page: response.per_page,
+            from: response.from,
+            to: response.to
+        }
+
+    } catch (error) {
+        journalEntriesData.value = []
+        paginationData.value = null
+    } finally {
+        loading.value = false
+    }
+}
+
+onMounted(async () => {
+    await fetchJournalEntries()
 })
 </script>

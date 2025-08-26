@@ -704,14 +704,15 @@ export interface JournalEntry {
     posted_at?: string;
     created_at: string;
     updated_at: string;
+    created_by_user?: User;
     lines?: JournalEntryLine[];
 }
 
 export interface JournalEntryLine {
     id?: number;
     journal_entry_id?: number;
-    chart_of_account_id: number;
-    chart_of_account?: ChartOfAccount;
+    account_id: number;
+    account?: ChartOfAccount;
     description?: string;
     debit_amount: number;
     credit_amount: number;

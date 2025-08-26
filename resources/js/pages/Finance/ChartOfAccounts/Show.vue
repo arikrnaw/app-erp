@@ -154,7 +154,7 @@
                         <div>
                             <Label class="text-sm font-medium text-muted-foreground">Created By</Label>
                             <p class="text-lg text-card-foreground">{{ (account as any).created_by_user?.name || 'N/A'
-                            }}</p>
+                                }}</p>
                         </div>
                         <div>
                             <Label class="text-sm font-medium text-muted-foreground">Created At</Label>
