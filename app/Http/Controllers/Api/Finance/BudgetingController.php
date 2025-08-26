@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class BudgetingController extends Controller
@@ -56,7 +57,7 @@ class BudgetingController extends Controller
     public function getBudgets(Request $request): JsonResponse
     {
         try {
-            $query = Budget::with(['category', 'period']);
+            $query = Budget::with(['category', 'period', 'variances']);
 
             // Apply filters
             if ($request->filled('search')) {
@@ -81,6 +82,17 @@ class BudgetingController extends Controller
 
             $budgets = $query->paginate($request->get('per_page', 20));
 
+            // Transform data to include computed fields
+            $budgets->getCollection()->transform(function ($budget) {
+                $budget->actual_spent = $budget->actual_spent;
+                $budget->variance = $budget->variance;
+                $budget->variance_percentage = $budget->variance_percentage;
+                $budget->remaining_amount = $budget->remaining_amount;
+                $budget->is_over_budget = $budget->isOverBudget();
+                $budget->is_under_budget = $budget->isUnderBudget();
+                return $budget;
+            });
+
             return response()->json([
                 'success' => true,
                 'data' => $budgets
@@ -100,16 +112,11 @@ class BudgetingController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string|max:1000',
                 'category_id' => 'required|exists:budget_categories,id',
                 'period_id' => 'required|exists:budget_periods,id',
                 'amount' => 'required|numeric|min:0',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after:start_date',
-                'type' => 'required|string|in:revenue,expense,capital',
-                'status' => 'nullable|string|in:active,inactive,draft',
-                'notes' => 'nullable|string|max:1000'
+                'description' => 'nullable|string|max:1000',
+                'status' => 'nullable|string|in:active,inactive,draft'
             ]);
 
             if ($validator->fails()) {
@@ -120,7 +127,17 @@ class BudgetingController extends Controller
                 ], 422);
             }
 
-            $budget = Budget::create($request->all());
+            // Get period details to set start and end dates
+            $period = BudgetPeriod::findOrFail($request->period_id);
+            
+            $budgetData = $request->all();
+            $budgetData['period_start'] = $period->start_date;
+            $budgetData['period_end'] = $period->end_date;
+            $budgetData['company_id'] = Auth::user()->company_id ?? 1;
+            $budgetData['created_by'] = Auth::id();
+            $budgetData['updated_by'] = Auth::id();
+
+            $budget = Budget::create($budgetData);
 
             return response()->json([
                 'success' => true,
@@ -131,6 +148,74 @@ class BudgetingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error creating budget: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update an existing budget
+     */
+    public function updateBudget(Request $request, $id): JsonResponse
+    {
+        try {
+            $budget = Budget::findOrFail($id);
+
+            $validator = Validator::make($request->all(), [
+                'category_id' => 'required|exists:budget_categories,id',
+                'period_id' => 'required|exists:budget_periods,id',
+                'amount' => 'required|numeric|min:0',
+                'description' => 'nullable|string|max:1000',
+                'status' => 'nullable|string|in:active,inactive,draft'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Get period details to set start and end dates
+            $period = BudgetPeriod::findOrFail($request->period_id);
+            
+            $budgetData = $request->all();
+            $budgetData['period_start'] = $period->start_date;
+            $budgetData['period_end'] = $period->end_date;
+            $budgetData['updated_by'] = Auth::id();
+
+            $budget->update($budgetData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Budget updated successfully',
+                'data' => $budget->load(['category', 'period'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating budget: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a budget
+     */
+    public function deleteBudget($id): JsonResponse
+    {
+        try {
+            $budget = Budget::findOrFail($id);
+            $budget->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Budget deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting budget: ' . $e->getMessage()
             ], 500);
         }
     }

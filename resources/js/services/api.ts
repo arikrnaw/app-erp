@@ -78,6 +78,27 @@ class ApiService {
         );
     }
 
+    // Generic HTTP methods
+    async get(url: string, config?: any): Promise<AxiosResponse> {
+        return this.api.get(url, config);
+    }
+
+    async post(url: string, data?: any, config?: any): Promise<AxiosResponse> {
+        return this.api.post(url, data, config);
+    }
+
+    async put(url: string, data?: any, config?: any): Promise<AxiosResponse> {
+        return this.api.put(url, data, config);
+    }
+
+    async patch(url: string, data?: any, config?: any): Promise<AxiosResponse> {
+        return this.api.patch(url, data, config);
+    }
+
+    async delete(url: string, config?: any): Promise<AxiosResponse> {
+        return this.api.delete(url, config);
+    }
+
     // Authentication helpers for WorkOS
     async getCurrentUser(): Promise<any> {
         try {

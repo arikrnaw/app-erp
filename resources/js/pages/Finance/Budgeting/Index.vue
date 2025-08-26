@@ -1,4 +1,5 @@
 <template>
+
     <Head title="Budget Management" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
@@ -8,20 +9,18 @@
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight">Budget Management</h1>
                     <p class="text-muted-foreground mt-1">
-                        Create, monitor, and analyze your company's budgets and forecasts
+                        Create and monitor budgets across different categories and periods
                     </p>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" @click="exportBudgetReport" :disabled="loading">
-                        <Download class="h-4 w-4 mr-2" />
-                        Export Report
+                    <Button variant="outline" size="sm" @click="refreshData" :disabled="loading">
+                        <RefreshCw class="h-4 w-4 mr-2" />
+                        Refresh
                     </Button>
-                    <Link :href="route('finance.budgeting.create')">
-                        <Button>
-                            <Plus class="w-4 h-4 mr-2" />
-                            Create Budget
-                        </Button>
-                    </Link>
+                    <Button @click="showCreateBudget = true">
+                        <Plus class="h-4 w-4 mr-2" />
+                        Create Budget
+                    </Button>
                 </div>
             </div>
 
@@ -31,11 +30,25 @@
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
                             <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                <FileText class="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                <Calculator class="h-6 w-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div class="space-y-1">
-                                <p class="text-sm font-medium text-muted-foreground">Active Budgets</p>
-                                <p class="text-2xl font-bold">{{ activeBudgetsCount }}</p>
+                                <p class="text-sm font-medium text-muted-foreground">Total Budget</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(totalBudget) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                                <TrendingDown class="h-6 w-6 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Total Spent</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(totalSpent) }}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -45,13 +58,11 @@
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
                             <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                                <Calculator class="h-6 w-6 text-green-600 dark:text-green-400" />
+                                <TrendingUp class="h-6 w-6 text-green-600 dark:text-green-400" />
                             </div>
                             <div class="space-y-1">
-                                <p class="text-sm font-medium text-muted-foreground">Total Budget</p>
-                                <p class="text-2xl font-bold text-green-600 dark:text-green-400">
-                                    {{ formatCurrency(totalBudget) }}
-                                </p>
+                                <p class="text-sm font-medium text-muted-foreground">Remaining</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(totalBudget - totalSpent) }}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -61,437 +72,588 @@
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
                             <div class="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                                <TrendingUp class="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                <AlertTriangle class="h-6 w-6 text-purple-600 dark:text-purple-400" />
                             </div>
                             <div class="space-y-1">
-                                <p class="text-sm font-medium text-muted-foreground">Total Spent</p>
-                                <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                    {{ formatCurrency(totalSpent) }}
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent class="p-6">
-                        <div class="flex items-center space-x-4">
-                            <div class="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                                <Wallet class="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                            </div>
-                            <div class="space-y-1">
-                                <p class="text-sm font-medium text-muted-foreground">Remaining</p>
-                                <p class="text-2xl font-bold" :class="remainingBudgetColor">
-                                    {{ formatCurrency(remainingBudget) }}
-                                </p>
+                                <p class="text-sm font-medium text-muted-foreground">Over Budget</p>
+                                <p class="text-2xl font-bold">{{ overBudgetCount }}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <!-- Budget Performance Charts -->
-            <div class="grid gap-6 lg:grid-cols-2">
-                <!-- Budget vs Actual Chart -->
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Budget vs Actual</CardTitle>
-                        <CardDescription>
-                            Monthly comparison of budgeted vs actual expenses
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="h-[300px]">
-                            <AreaChart 
-                                :data="budgetVsActualData" 
-                                :categories="['budget', 'actual']" 
-                                :index="'month'"
-                                :colors="['hsl(var(--chart-1))', 'hsl(var(--chart-2))']" 
-                                :y-formatter="formatChartCurrency" 
-                                class="h-full" 
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <!-- Budget Utilization by Category -->
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Budget Utilization by Category</CardTitle>
-                        <CardDescription>
-                            How much of each budget category has been utilized
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="space-y-4">
-                            <div v-for="category in budgetCategories" :key="category.id" 
-                                 class="space-y-2">
-                                <div class="flex items-center justify-between text-sm">
-                                    <span class="font-medium">{{ category.name }}</span>
-                                    <span class="text-muted-foreground">
-                                        {{ formatCurrency(category.spent) }} / {{ formatCurrency(category.budget) }}
-                                    </span>
-                                </div>
-                                <div class="w-full bg-muted rounded-full h-2">
-                                    <div 
-                                        class="h-2 rounded-full transition-all duration-300"
-                                        :class="getUtilizationColor(category.utilization)"
-                                        :style="{ width: `${Math.min(category.utilization, 100)}%` }"
-                                    ></div>
-                                </div>
-                                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                                    <span>{{ category.utilization.toFixed(1) }}% utilized</span>
-                                    <span v-if="category.utilization > 100" class="text-red-500">
-                                        {{ formatCurrency(category.overage) }} over budget
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <!-- Budget Periods -->
+            <!-- Filters -->
             <Card>
                 <CardHeader>
-                    <CardTitle>Budget Periods</CardTitle>
+                    <CardTitle>Filters</CardTitle>
                     <CardDescription>
-                        Manage your budget periods and fiscal years
+                        Filter budgets by period, category, and status
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="space-y-4">
-                        <div v-for="period in budgetPeriods" :key="period.id" 
-                             class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-                            <div class="flex items-center space-x-4">
-                                <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                    <Calendar class="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                    <p class="font-medium">{{ period.name }}</p>
-                                    <p class="text-sm text-muted-foreground">
-                                        {{ formatDate(period.start_date) }} - {{ formatDate(period.end_date) }}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-4">
-                                <div class="text-right">
-                                    <p class="font-semibold">{{ formatCurrency(period.total_budget) }}</p>
-                                    <p class="text-sm text-muted-foreground">Total Budget</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-semibold" :class="period.status === 'active' ? 'text-green-600' : 'text-muted-foreground'">
-                                        {{ period.status }}
-                                    </p>
-                                    <p class="text-sm text-muted-foreground">{{ period.progress }}% complete</p>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <Link :href="route('finance.budgeting.show', period.id)">
-                                        <Button variant="ghost" size="sm">
-                                            <Eye class="h-4 w-4" />
-                                        </Button>
-                                    </Link>
-                                    <Link :href="route('finance.budgeting.edit', period.id)">
-                                        <Button variant="ghost" size="sm">
-                                            <Edit class="h-4 w-4" />
-                                        </Button>
-                                    </Link>
-                                </div>
-                            </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4">
+                        <div class="space-y-2">
+                            <Label for="period_filter">Period</Label>
+                            <Select v-model="filters.period" @update:model-value="() => fetchBudgets(1)">
+                                <SelectTrigger class="w-full">
+                                    <SelectValue placeholder="All Periods" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Periods</SelectItem>
+                                    <SelectItem value="current">Current Month</SelectItem>
+                                    <SelectItem value="previous">Previous Month</SelectItem>
+                                    <SelectItem value="quarter">Current Quarter</SelectItem>
+                                    <SelectItem value="year">Current Year</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <div v-if="budgetPeriods.length === 0" class="text-center py-8">
-                            <Calendar class="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                            <p class="text-muted-foreground">No budget periods found</p>
-                            <Link :href="route('finance.budgeting.create')">
-                                <Button variant="outline" size="sm" class="mt-2">
-                                    <Plus class="h-4 w-4 mr-2" />
-                                    Create First Budget
-                                </Button>
-                            </Link>
+
+                        <div class="space-y-2">
+                            <Label for="category_filter">Category</Label>
+                            <Select v-model="filters.category_id" @update:model-value="() => fetchBudgets(1)">
+                                <SelectTrigger class="w-full">
+                                    <SelectValue placeholder="All Categories" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Categories</SelectItem>
+                                    <SelectItem v-for="category in (budgetCategories || [])" :key="category.id"
+                                        :value="category.id">
+                                        {{ category.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="status_filter">Status</Label>
+                            <Select v-model="filters.status" @update:model-value="() => fetchBudgets(1)">
+                                <SelectTrigger class="w-full">
+                                    <SelectValue placeholder="All Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
-            <!-- Variance Analysis -->
+            <!-- Budgets Table -->
             <Card>
                 <CardHeader>
-                    <CardTitle>Variance Analysis</CardTitle>
+                    <CardTitle>Budgets</CardTitle>
                     <CardDescription>
-                        Budget variances and performance indicators
+                        Manage your budgets and monitor spending
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="overflow-x-auto">
+                    <div class="rounded-md border mb-6 p-2">
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Category</TableHead>
-                                    <TableHead class="text-right">Budget</TableHead>
-                                    <TableHead class="text-right">Actual</TableHead>
-                                    <TableHead class="text-right">Variance</TableHead>
-                                    <TableHead class="text-right">Variance %</TableHead>
+                                    <TableHead>Period</TableHead>
+                                    <TableHead>Budgeted Amount</TableHead>
+                                    <TableHead>Actual Spent</TableHead>
+                                    <TableHead>Remaining</TableHead>
+                                    <TableHead>Usage %</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead class="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                <TableRow v-for="variance in varianceAnalysis" :key="variance.id" class="hover:bg-muted/50">
-                                    <TableCell>
-                                        <div class="flex items-center space-x-2">
-                                            <div class="p-1 rounded" :class="getVarianceIconClass(variance.variance_percentage)">
-                                                <component :is="getVarianceIcon(variance.variance_percentage)" class="h-3 w-3" />
-                                            </div>
-                                            <span>{{ variance.category }}</span>
+                                <TableRow v-if="loading">
+                                    <TableCell colspan="8" class="text-center py-12">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <Loader2 class="w-6 h-6 animate-spin" />
+                                            <span class="text-muted-foreground">Loading budgets...</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell class="text-right">
-                                        {{ formatCurrency(variance.budget) }}
+                                </TableRow>
+                                <TableRow v-else-if="!budgets || budgets.length === 0">
+                                    <TableCell colspan="8" class="text-center py-12">
+                                        <div class="flex flex-col items-center space-y-2">
+                                            <Calculator class="h-12 w-12 text-muted-foreground" />
+                                            <div class="text-center">
+                                                <h3 class="text-lg font-medium">No budgets found</h3>
+                                                <p class="text-muted-foreground">
+                                                    Create your first budget to start monitoring expenses
+                                                </p>
+                                            </div>
+                                        </div>
                                     </TableCell>
-                                    <TableCell class="text-right">
-                                        {{ formatCurrency(variance.actual) }}
-                                    </TableCell>
-                                    <TableCell class="text-right">
-                                        <span :class="getVarianceColor(variance.variance)">
-                                            {{ formatCurrency(variance.variance) }}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell class="text-right">
-                                        <span :class="getVarianceColor(variance.variance_percentage)">
-                                            {{ variance.variance_percentage > 0 ? '+' : '' }}{{ variance.variance_percentage.toFixed(1) }}%
-                                        </span>
+                                </TableRow>
+                                <TableRow v-else v-for="budget in (budgets || [])"
+                                    :key="budget?.id || `budget-${Math.random()}`">
+                                    <TableCell>
+                                        <div class="space-y-1">
+                                            <div class="font-medium">{{ budget?.category?.name || 'N/A' }}</div>
+                                            <div class="text-sm text-muted-foreground max-w-xs truncate">
+                                                {{ budget?.description || 'No description' }}
+                                            </div>
+                                        </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge :variant="getVarianceStatusVariant(variance.variance_percentage)">
-                                            {{ getVarianceStatus(variance.variance_percentage) }}
+                                        <div class="text-sm">
+                                            {{ budget?.period_start ? formatDate(budget.period_start) : 'N/A' }} - {{
+                                                budget?.period_end ? formatDate(budget.period_end) : 'N/A' }}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div class="font-medium">{{ budget?.amount ? formatCurrency(budget.amount) :
+                                            'N/A' }}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div class="font-medium text-red-600">
+                                            {{ budget?.actual_spent ? formatCurrency(budget.actual_spent) : 'N/A' }}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div class="font-medium text-green-600">
+                                            {{ budget?.remaining_amount ? formatCurrency(budget.remaining_amount) :
+                                                'N/A' }}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-16 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-blue-600 h-2 rounded-full"
+                                                    :style="`width: ${budget?.actual_spent && budget?.amount ? Math.min((budget.actual_spent / parseFloat(budget.amount)) * 100, 100) : 0}%`">
+                                                </div>
+                                            </div>
+                                            <span class="text-sm font-medium">
+                                                {{ budget?.actual_spent && budget?.amount ?
+                                                    Math.min((budget.actual_spent / parseFloat(budget.amount)) * 100,
+                                                        100).toFixed(1) : 0 }}%
+                                            </span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge :variant="getStatusVariant(budget?.status || 'draft')"
+                                            class="capitalize">
+                                            {{ budget?.status || 'draft' }}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" class="h-8 w-8 p-0">
+                                                    <MoreHorizontal class="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem @click="editBudget(budget)">
+                                                    <Edit class="mr-2 h-4 w-4" />
+                                                    Edit Budget
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem @click="viewVariance(budget)">
+                                                    <BarChart3 class="mr-2 h-4 w-4" />
+                                                    View Variance
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem @click="deleteBudget(budget?.id)"
+                                                    class="text-destructive">
+                                                    <Trash2 class="mr-2 h-4 w-4" />
+                                                    Delete Budget
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
+
+                        <!-- Pagination -->
+
+                        <DataPagination v-if="pagination && pagination.total > 0"
+                            :current-page="pagination.current_page" :total-pages="pagination.last_page"
+                            :total-items="pagination.total" :per-page="pagination.per_page"
+                            @page-change="(page) => fetchBudgets(page)" />
                     </div>
                 </CardContent>
             </Card>
 
-            <!-- Quick Actions -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                    <CardDescription>
-                        Common budgeting tasks and shortcuts
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                        <Link :href="route('finance.budgeting.create')">
-                            <Button variant="outline" class="w-full justify-start">
-                                <Plus class="h-4 w-4 mr-2" />
-                                Create Budget
+            <!-- Create/Edit Budget Dialog -->
+            <Dialog :open="showCreateBudget" @update:open="showCreateBudget = false">
+                <DialogContent class="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>{{ editingBudget ? 'Edit Budget' : 'Create New Budget' }}</DialogTitle>
+                        <DialogDescription>
+                            {{ editingBudget ? 'Update budget details' : 'Set up a new budget for monitoring expenses'
+                            }}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form @submit.prevent="saveBudget" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <Label for="category_id">Category</Label>
+                                <Select v-model="budgetForm.category_id" required>
+                                    <SelectTrigger class="w-full">
+                                        <SelectValue :placeholder="getCategoryName(budgetForm.category_id)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="category in (budgetCategories || [])" :key="category.id"
+                                            :value="category.id">
+                                            {{ category.name }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="period_id">Budget Period</Label>
+                                <Select v-model="budgetForm.period_id" required>
+                                    <SelectTrigger class="w-full">
+                                        <SelectValue :placeholder="getPeriodName(budgetForm.period_id)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="period in (budgetPeriods || [])" :key="period.id"
+                                            :value="period.id">
+                                            {{ period.name }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <Label for="amount">Amount</Label>
+                                <Input id="amount" v-model="budgetForm.amount" type="number" step="0.01" required />
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="status">Status</Label>
+                                <Select v-model="budgetForm.status" required>
+                                    <SelectTrigger class="w-full">
+                                        <SelectValue :placeholder="budgetForm.status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="draft">Draft</SelectItem>
+                                        <SelectItem value="active">Active</SelectItem>
+                                        <SelectItem value="inactive">Inactive</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="description">Description</Label>
+                            <Textarea id="description" v-model="budgetForm.description"
+                                placeholder="Budget description..." />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" @click="showCreateBudget = false">
+                                Cancel
                             </Button>
-                        </Link>
-                        <Link :href="route('finance.budgeting.forecast')">
-                            <Button variant="outline" class="w-full justify-start">
-                                <TrendingUp class="h-4 w-4 mr-2" />
-                                Financial Forecast
+                            <Button type="submit" :disabled="saving">
+                                <Loader2 v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
+                                {{ editingBudget ? 'Update' : 'Create' }}
                             </Button>
-                        </Link>
-                        <Link :href="route('finance.budgeting.reports.variance')">
-                            <Button variant="outline" class="w-full justify-start">
-                                <BarChart3 class="h-4 w-4 mr-2" />
-                                Variance Report
-                            </Button>
-                        </Link>
-                        <Link :href="route('finance.budgeting.settings')">
-                            <Button variant="outline" class="w-full justify-start">
-                                <Settings class="h-4 w-4 mr-2" />
-                                Budget Settings
-                            </Button>
-                        </Link>
-                    </div>
-                </CardContent>
-            </Card>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import type { BreadcrumbItemType } from '@/types';
-import { 
-    Card, 
-    CardContent, 
-    CardHeader, 
-    CardTitle, 
-    CardDescription 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-    Table, 
-    TableBody, 
-    TableCell, 
-    TableHead, 
-    TableHeader, 
-    TableRow 
-} from '@/components/ui/table';
-import { AreaChart } from '@/components/ui/chart-area';
-import { 
-    FileText, 
-    Calculator, 
-    TrendingUp, 
-    Wallet, 
-    Download, 
-    Plus,
-    Eye,
-    Edit,
-    Calendar,
-    Settings,
-    BarChart3,
-    CheckCircle,
+import { ref, onMounted, computed } from 'vue'
+import { Head } from '@inertiajs/vue3'
+import AppLayout from '@/layouts/AppLayout.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DataPagination } from '@/components/ui/pagination'
+
+
+import {
+    Calculator,
+    TrendingDown,
+    TrendingUp,
     AlertTriangle,
-    XCircle
-} from 'lucide-vue-next';
-import { useApi } from '@/composables/useApi';
+    RefreshCw,
+    Plus,
+    MoreHorizontal,
+    Edit,
+    BarChart3,
+    Trash2,
+    Loader2
+} from 'lucide-vue-next'
+import { apiService } from '@/services/api'
+import type { BreadcrumbItemType } from '@/types'
+
+interface BudgetCategory {
+    id: number
+    name: string
+    description: string
+    type: string
+}
+
+interface Budget {
+    id: number
+    company_id: number
+    category_id: number
+    period_id: number
+    period_start: string
+    period_end: string
+    amount: string
+    description: string
+    status: string
+    created_by: number
+    updated_by: number
+    created_at: string
+    updated_at: string
+    deleted_at: string | null
+    actual_spent?: number
+    variance?: number
+    variance_percentage?: number
+    remaining_amount?: number
+    is_over_budget?: boolean
+    is_under_budget?: boolean
+    category?: BudgetCategory
+    period?: {
+        id: number
+        name: string
+        description: string
+        start_date: string
+        end_date: string
+        fiscal_year: string
+        status: string
+    }
+}
+
+interface PaginationData {
+    current_page: number
+    data: Budget[]
+    first_page_url: string
+    from: number
+    last_page: number
+    last_page_url: string
+    links: Array<{
+        url: string | null
+        label: string
+        page: number | null
+        active: boolean
+    }>
+    next_page_url: string | null
+    path: string
+    per_page: number
+    prev_page_url: string | null
+    to: number
+    total: number
+}
 
 const breadcrumbs: BreadcrumbItemType[] = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Finance', href: '/finance' },
     { title: 'Budget Management', href: '/finance/budgeting' }
-];
+]
 
-const { api } = useApi();
-const loading = ref(false);
+const loading = ref(false)
+const saving = ref(false)
+const budgets = ref<Budget[]>([])
+const budgetCategories = ref<BudgetCategory[]>([])
+const budgetPeriods = ref<any[]>([])
+const pagination = ref<PaginationData | null>(null)
+const showCreateBudget = ref(false)
+const editingBudget = ref<Budget | null>(null)
 
-// Data
-const budgets = ref([]);
-const budgetPeriods = ref([]);
-const budgetCategories = ref([]);
-const varianceAnalysis = ref([]);
+const filters = ref({
+    period: 'all',
+    category_id: 'all',
+    status: 'all'
+})
 
-// Computed
-const activeBudgetsCount = computed(() => 
-    budgets.value.filter(b => b.status === 'active').length
-);
+const perPage = ref(5)
 
-const totalBudget = computed(() => 
-    budgets.value.reduce((sum, budget) => sum + budget.amount, 0)
-);
+const budgetForm = ref({
+    category_id: '',
+    period_id: '',
+    amount: '',
+    description: '',
+    status: 'draft'
+})
 
-const totalSpent = computed(() => 
-    budgets.value.reduce((sum, budget) => sum + budget.spent, 0)
-);
+// Computed properties
+const totalBudget = computed(() => {
+    if (!Array.isArray(budgets.value)) return 0
+    return budgets.value.reduce((sum, budget) => sum + parseFloat(budget.amount), 0)
+})
+const totalSpent = computed(() => {
+    if (!Array.isArray(budgets.value)) return 0
+    return budgets.value.reduce((sum, budget) => sum + (budget.actual_spent || 0), 0)
+})
+const overBudgetCount = computed(() => {
+    if (!Array.isArray(budgets.value)) return 0
+    return budgets.value.filter(budget => budget.is_over_budget).length
+})
 
-const remainingBudget = computed(() => totalBudget.value - totalSpent.value);
-
-const remainingBudgetColor = computed(() => 
-    remainingBudget.value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-);
-
-// Chart data
-const budgetVsActualData = computed(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return months.map((month, index) => ({
-        month,
-        budget: 100000 + (index * 15000),
-        actual: 95000 + (index * 18000)
-    }));
-});
-
-// Methods
-const fetchData = async () => {
-    loading.value = true;
+const fetchBudgets = async (page: number = 1) => {
+    loading.value = true
     try {
-        const [budgetsResponse, periodsResponse, categoriesResponse, varianceResponse] = await Promise.all([
-            api.get('/api/finance/budgeting/budgets'),
-            api.get('/api/finance/budgeting/periods'),
-            api.get('/api/finance/budgeting/categories'),
-            api.get('/api/finance/budgeting/variance-analysis')
-        ]);
-        
-        budgets.value = budgetsResponse.data;
-        budgetPeriods.value = periodsResponse.data;
-        budgetCategories.value = categoriesResponse.data;
-        varianceAnalysis.value = varianceResponse.data;
+        const params = {
+            period: filters.value.period === 'all' ? '' : filters.value.period,
+            category_id: filters.value.category_id === 'all' ? '' : filters.value.category_id,
+            status: filters.value.status === 'all' ? '' : filters.value.status,
+            page,
+            per_page: perPage.value
+        }
+        const response = await apiService.get('/finance/budgeting/budgets', { params })
+
+        if (response.data.success) {
+            budgets.value = response.data.data.data || []
+            pagination.value = response.data.data
+        }
     } catch (error) {
-        console.error('Error fetching budgeting data:', error);
+        console.error('Error fetching budgets:', error)
     } finally {
-        loading.value = false;
+        loading.value = false
     }
-};
+}
 
-const getUtilizationColor = (utilization: number): string => {
-    if (utilization <= 80) return 'bg-green-500';
-    if (utilization <= 100) return 'bg-yellow-500';
-    return 'bg-red-500';
-};
-
-const getVarianceIcon = (variance: number) => {
-    if (variance <= 5) return CheckCircle;
-    if (variance <= 15) return AlertTriangle;
-    return XCircle;
-};
-
-const getVarianceIconClass = (variance: number): string => {
-    if (variance <= 5) return 'bg-green-100 dark:bg-green-900/20';
-    if (variance <= 15) return 'bg-yellow-100 dark:bg-yellow-900/20';
-    return 'bg-red-100 dark:bg-red-900/20';
-};
-
-const getVarianceColor = (variance: number): string => {
-    if (variance <= 0) return 'text-green-600 dark:text-green-400';
-    return 'text-red-600 dark:text-red-400';
-};
-
-const getVarianceStatus = (variance: number): string => {
-    if (variance <= 5) return 'On Track';
-    if (variance <= 15) return 'Watch';
-    return 'Over Budget';
-};
-
-const getVarianceStatusVariant = (variance: number): string => {
-    if (variance <= 5) return 'default';
-    if (variance <= 15) return 'secondary';
-    return 'destructive';
-};
-
-const exportBudgetReport = async () => {
+const fetchBudgetCategories = async () => {
     try {
-        const response = await api.get('/api/finance/budgeting/export', {
-            responseType: 'blob'
-        });
-        
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'budget-report.xlsx');
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        const response = await apiService.get('/finance/budgeting/categories')
+        budgetCategories.value = response.data.data || []
     } catch (error) {
-        console.error('Error exporting budget report:', error);
+        console.error('Error fetching budget categories:', error)
     }
-};
+}
 
-const formatCurrency = (amount: number): string => {
+const fetchBudgetPeriods = async () => {
+    try {
+        const response = await apiService.get('/finance/budgeting/periods')
+        budgetPeriods.value = response.data.data || []
+    } catch (error) {
+        console.error('Error fetching budget periods:', error)
+    }
+}
+
+const refreshData = () => {
+    fetchBudgets(1)
+    fetchBudgetCategories()
+    fetchBudgetPeriods()
+}
+
+const editBudget = (budget: Budget) => {
+    editingBudget.value = budget
+    console.log('Editing budget:', budget) // Debug log
+    budgetForm.value = {
+        category_id: budget.category_id ? budget.category_id.toString() : '',
+        period_id: budget.period_id ? budget.period_id.toString() : '',
+        amount: budget.amount ? budget.amount.toString() : '',
+        description: budget.description || '',
+        status: budget.status || 'draft'
+    }
+    console.log('Form data:', budgetForm.value) // Debug log
+    showCreateBudget.value = true
+}
+
+const saveBudget = async () => {
+    saving.value = true
+    try {
+        if (editingBudget.value) {
+            await apiService.patch(`/finance/budgeting/budgets/${editingBudget.value.id}`, budgetForm.value)
+        } else {
+            await apiService.post('/finance/budgeting/budgets', budgetForm.value)
+        }
+        showCreateBudget.value = false
+        editingBudget.value = null
+        resetBudgetForm()
+        fetchBudgets(1)
+    } catch (error) {
+        console.error('Error saving budget:', error)
+    } finally {
+        saving.value = false
+    }
+}
+
+const deleteBudget = async (id: number) => {
+    if (confirm('Are you sure you want to delete this budget?')) {
+        try {
+            await apiService.delete(`/finance/budgeting/budgets/${id}`)
+            fetchBudgets(1)
+        } catch (error) {
+            console.error('Error deleting budget:', error)
+        }
+    }
+}
+
+const resetBudgetForm = () => {
+    budgetForm.value = {
+        category_id: '',
+        period_id: '',
+        amount: '',
+        description: '',
+        status: 'draft'
+    }
+}
+
+const viewVariance = (budget: Budget) => {
+    // Navigate to variance analysis page
+    console.log('View variance for budget:', budget.id)
+}
+
+const formatCurrency = (amount: number | string) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR'
-    }).format(amount);
-};
+    }).format(numAmount)
+}
 
-const formatChartCurrency = (tick: number | Date, i: number, ticks: (number | Date)[]): string => {
-    if (typeof tick === 'number') {
-        return formatCurrency(tick);
+const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    })
+}
+
+
+const getStatusVariant = (status: string) => {
+    switch (status) {
+        case 'active':
+            return 'default'
+        case 'inactive':
+            return 'secondary'
+        case 'draft':
+            return 'outline'
+        default:
+            return 'outline'
     }
-    return tick.toString();
-};
+}
 
-const formatDate = (date: string): string => {
-    return new Date(date).toLocaleDateString('id-ID');
-};
+
+
+const getCategoryName = (categoryId: string | number) => {
+    if (!categoryId) return 'Select category'
+    const category = budgetCategories.value.find(cat => cat.id.toString() === categoryId.toString())
+    return category ? category.name : 'Unknown category'
+}
+
+const getPeriodName = (periodId: string | number) => {
+    if (!periodId) return 'Select period'
+    const period = budgetPeriods.value.find(per => per.id.toString() === periodId.toString())
+    return period ? period.name : 'Unknown period'
+}
+
+
 
 onMounted(() => {
-    fetchData();
-});
+    fetchBudgets(1)
+    fetchBudgetCategories()
+    fetchBudgetPeriods()
+})
 </script>

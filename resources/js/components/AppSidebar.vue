@@ -20,6 +20,11 @@ const mainNavItems: NavItem[] = [
         icon: DollarSign,
         items: [
             {
+                title: 'Dashboard Finance',
+                href: '/finance/dashboard',
+                icon: LayoutGrid,
+            },
+            {
                 title: 'Chart of Accounts',
                 href: '/finance/chart-of-accounts',
                 icon: BookOpenCheck,

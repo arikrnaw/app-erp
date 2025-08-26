@@ -536,11 +536,22 @@ Route::prefix('finance/fixed-assets')->group(function () {
     Route::get('/export', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'exportAssets']);
 });
 
+// Finance - Dashboard Routes
+Route::prefix('finance/dashboard')->group(function () {
+    Route::get('/', [App\Http\Controllers\Api\Finance\FinanceDashboardController::class, 'dashboard']);
+    Route::get('/metrics', [App\Http\Controllers\Api\Finance\FinanceDashboardController::class, 'metrics']);
+    Route::get('/budget-alerts', [App\Http\Controllers\Api\Finance\FinanceDashboardController::class, 'budgetAlerts']);
+    Route::get('/pending-approvals', [App\Http\Controllers\Api\Finance\FinanceDashboardController::class, 'pendingApprovals']);
+    Route::get('/cash-position', [App\Http\Controllers\Api\Finance\FinanceDashboardController::class, 'cashPosition']);
+});
+
 // Finance - Budgeting Routes
 Route::prefix('finance/budgeting')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'dashboard']);
     Route::get('/budgets', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'getBudgets']);
     Route::post('/budgets', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'createBudget']);
+    Route::patch('/budgets/{id}', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'updateBudget']);
+    Route::delete('/budgets/{id}', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'deleteBudget']);
     
     Route::get('/periods', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'getBudgetPeriods']);
     Route::post('/periods', [App\Http\Controllers\Api\Finance\BudgetingController::class, 'createBudgetPeriod']);
@@ -582,16 +593,16 @@ Route::prefix('finance/approval-workflow')->group(function () {
     Route::get('/export-approvals', [App\Http\Controllers\Api\Finance\ApprovalWorkflowController::class, 'exportApprovals']);
 });
 
-// Purchasing - Purchase Order Routes
-Route::prefix('purchasing/purchase-orders')->group(function () {
-    Route::get('/', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'index']);
-    Route::post('/', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'store']);
-    Route::get('/{id}', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'show']);
-    Route::patch('/{id}', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'update']);
-    Route::post('/{id}/submit-approval', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'submitForApproval']);
-    Route::post('/{id}/cancel', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'cancel']);
-    Route::get('/pending-approval', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'pendingApproval']);
-});
+// Purchasing - Purchase Order Routes (Commented out - Controller not implemented yet)
+// Route::prefix('purchasing/purchase-orders')->group(function () {
+//     Route::get('/', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'index']);
+//     Route::post('/', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'store']);
+//     Route::get('/{id}', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'show']);
+//     Route::patch('/{id}', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'update']);
+//     Route::post('/{id}/submit-approval', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'submitForApproval']);
+//     Route::post('/{id}/cancel', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'cancel']);
+//     Route::get('/pending-approval', [App\Http\Controllers\Api\Purchasing\PurchaseOrderController::class, 'pendingApproval']);
+// });
 
 // Finance - Expense Routes
 Route::prefix('finance/expenses')->group(function () {

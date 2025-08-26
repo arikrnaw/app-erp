@@ -332,6 +332,9 @@ Route::middleware([
     })->name('inventory.edit');
 
     // Finance - Chart of Accounts
+    Route::get('finance/dashboard', function () {
+        return Inertia::render('Finance/Dashboard');
+    })->name('finance.dashboard');
     Route::get('finance/chart-of-accounts', function () {
         return Inertia::render('Finance/ChartOfAccounts/Index');
     })->name('finance.chart-of-accounts.index');
