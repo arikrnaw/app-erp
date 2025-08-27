@@ -14,8 +14,7 @@ use App\Http\Controllers\Api\ChartOfAccountController;
 use App\Http\Controllers\Api\JournalEntryController;
 use App\Http\Controllers\Api\GeneralLedgerController;
 use App\Http\Controllers\Api\TrialBalanceController;
-use App\Http\Controllers\Api\InvoiceController;
-use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\Finance\AccountsReceivableController;
 use App\Http\Controllers\Api\BillController;
 use App\Http\Controllers\Api\FinancialReportController;
 use App\Http\Controllers\Api\TaxRateController;
@@ -203,10 +202,9 @@ Route::middleware([
     Route::get('finance/trial-balance/export', [TrialBalanceController::class, 'export']);
 
     // Invoices (Accounts Receivable)
-    Route::apiResource('finance/accounts-receivable/invoices', InvoiceController::class);
-    
-    // Payments (Accounts Receivable)
-    Route::apiResource('finance/accounts-receivable/payments', PaymentController::class);
+    Route::apiResource('finance/accounts-receivable/invoices', AccountsReceivableController::class);
+    Route::post('finance/accounts-receivable/invoices/{id}/post', [AccountsReceivableController::class, 'postInvoice']);
+    Route::post('finance/accounts-receivable/payments', [AccountsReceivableController::class, 'recordPayment']);
     
     // Bills (Accounts Payable)
     Route::apiResource('finance/accounts-payable/bills', BillController::class);

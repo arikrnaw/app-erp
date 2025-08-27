@@ -732,10 +732,14 @@ export interface Invoice {
     total_amount: number;
     paid_amount: number;
     balance_amount: number;
+    description?: string;
     notes?: string;
+    posted_at?: string;
+    journal_entry_id?: number;
     created_at: string;
     updated_at: string;
     items?: InvoiceItem[];
+    payments?: Payment[];
 }
 
 export interface InvoiceItem {
@@ -743,11 +747,14 @@ export interface InvoiceItem {
     invoice_id?: number;
     product_id: number;
     product?: Product;
+    item_name?: string;
     description?: string;
     quantity: number;
     unit_price: number;
     discount_percentage: number;
     tax_percentage: number;
+    discount_amount: number;
+    tax_amount: number;
     total_amount: number;
 }
 
@@ -762,6 +769,9 @@ export interface Payment {
     payment_method: 'cash' | 'check' | 'bank_transfer' | 'credit_card' | 'other';
     reference_number?: string;
     amount: number;
+    description?: string;
+    status: string;
+    journal_entry_id?: number;
     notes?: string;
     created_at: string;
     updated_at: string;

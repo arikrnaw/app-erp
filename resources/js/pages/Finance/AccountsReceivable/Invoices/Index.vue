@@ -17,17 +17,16 @@
                         <Download class="h-4 w-4 mr-2" />
                         Export
                     </Button>
-                    <Link :href="route('finance.accounts-receivable.invoices.create')">
-                    <Button>
+                    <Button @click="showCreateInvoiceModal = true">
                         <Plus class="w-4 h-4 mr-2" />
                         Create Invoice
                     </Button>
-                    </Link>
                 </div>
             </div>
 
             <!-- Summary Cards -->
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <!-- Row 1: 3 Cards -->
+            <div class="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
@@ -69,7 +68,10 @@
                         </div>
                     </CardContent>
                 </Card>
+            </div>
 
+            <!-- Row 2: 2 Cards -->
+            <div class="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardContent class="p-6">
                         <div class="flex items-center space-x-4">
@@ -79,6 +81,20 @@
                             <div class="space-y-1">
                                 <p class="text-sm font-medium text-muted-foreground">Paid Amount</p>
                                 <p class="text-2xl font-bold">{{ formatCurrency(summary.paid_amount) }}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                                <AlertTriangle class="h-6 w-6 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-muted-foreground">Outstanding Amount</p>
+                                <p class="text-2xl font-bold">{{ formatCurrency(summary.outstanding_amount) }}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -107,8 +123,8 @@
                                     <SelectItem value="all">All Status</SelectItem>
                                     <SelectItem value="draft">Draft</SelectItem>
                                     <SelectItem value="sent">Sent</SelectItem>
+                                    <SelectItem value="partial">Partial</SelectItem>
                                     <SelectItem value="paid">Paid</SelectItem>
-                                    <SelectItem value="overdue">Overdue</SelectItem>
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -207,7 +223,8 @@
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge :variant="getStatusVariant(invoice.status)" class="capitalize">
+                                        <Badge :variant="getStatusVariant(invoice.status)"
+                                            :class="getStatusColor(invoice.status)">
                                             {{ invoice.status }}
                                         </Badge>
                                     </TableCell>
@@ -219,19 +236,24 @@
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem as-child>
-                                                    <Link
-                                                        :href="route('finance.accounts-receivable.invoices.show', invoice.id)">
+                                                <DropdownMenuItem @click="openViewInvoiceModal(invoice)">
                                                     <Eye class="w-4 h-4 mr-2" />
                                                     View Details
-                                                    </Link>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem as-child v-if="invoice.status === 'draft'">
-                                                    <Link
-                                                        :href="route('finance.accounts-receivable.invoices.edit', invoice.id)">
+                                                <DropdownMenuItem @click="postInvoice(invoice.id)"
+                                                    v-if="invoice.status === 'draft'">
+                                                    <Send class="w-4 h-4 mr-2" />
+                                                    Post Invoice
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem @click="openEditInvoiceModal(invoice)"
+                                                    v-if="invoice.status === 'draft'">
                                                     <Edit class="w-4 h-4 mr-2" />
                                                     Edit Invoice
-                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem @click="openRecordPaymentModal(invoice)"
+                                                    v-if="invoice.status === 'sent'">
+                                                    <CreditCard class="w-4 h-4 mr-2" />
+                                                    Record Payment
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem @click="deleteInvoice(invoice.id)"
@@ -271,12 +293,71 @@
                 </CardContent>
             </Card>
         </div>
+
+        <!-- Create Invoice Modal -->
+        <Dialog v-model:open="showCreateInvoiceModal">
+            <DialogContent class="!max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Create New Invoice</DialogTitle>
+                    <DialogDescription>
+                        Create a new invoice with customer details and line items
+                    </DialogDescription>
+                </DialogHeader>
+
+                <!-- Create Invoice Form -->
+                <CreateInvoiceForm v-if="showCreateInvoiceModal" @invoice-created="onInvoiceCreated"
+                    @cancel="showCreateInvoiceModal = false" />
+            </DialogContent>
+        </Dialog>
+
+        <!-- Record Payment Modal -->
+        <Dialog v-model:open="showRecordPaymentModal">
+            <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Record Payment</DialogTitle>
+                    <DialogDescription>
+                        Record a payment for invoice {{ selectedInvoice?.invoice_number }}
+                    </DialogDescription>
+                </DialogHeader>
+                <RecordPaymentForm v-if="showRecordPaymentModal && selectedInvoice" :invoice="selectedInvoice"
+                    @payment-recorded="onPaymentRecorded" @cancel="showRecordPaymentModal = false" />
+            </DialogContent>
+        </Dialog>
+
+        <!-- Edit Invoice Modal -->
+        <Dialog v-model:open="showEditInvoiceModal">
+            <DialogContent class="!max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Edit Invoice</DialogTitle>
+                    <DialogDescription>
+                        Edit invoice {{ selectedInvoice?.invoice_number }}
+                    </DialogDescription>
+                </DialogHeader>
+                <EditInvoiceForm v-if="showEditInvoiceModal && selectedInvoice" :invoice="selectedInvoice"
+                    @invoice-updated="onInvoiceUpdated" @cancel="showEditInvoiceModal = false" />
+            </DialogContent>
+        </Dialog>
+
+        <!-- View Invoice Details Modal -->
+        <Dialog v-model:open="showViewInvoiceModal">
+            <DialogContent class="!max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Invoice Details</DialogTitle>
+                    <DialogDescription>
+                        View details for invoice {{ selectedInvoice?.invoice_number }}
+                    </DialogDescription>
+                </DialogHeader>
+                <ViewInvoiceDetails v-if="showViewInvoiceModal && selectedInvoice" :invoice="selectedInvoice"
+                    @close="showViewInvoiceModal = false" @edit="openEditInvoiceModal(selectedInvoice)"
+                    @record-payment="openRecordPaymentModal(selectedInvoice)" />
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { Head, Link, router } from '@inertiajs/vue3'
+import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -285,6 +366,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
     Plus,
     MoreHorizontal,
@@ -300,17 +382,24 @@ import {
     CheckCircle,
     Download,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    CreditCard,
+    Send
 } from 'lucide-vue-next'
 import { apiService } from '@/services/api'
 import type { Invoice, PaginatedData } from '@/types/erp'
 import type { BreadcrumbItemType } from '@/types'
+import CreateInvoiceForm from '@/components/Finance/AccountsReceivable/CreateInvoiceForm.vue'
+import RecordPaymentForm from '@/components/Finance/AccountsReceivable/RecordPaymentForm.vue'
+import EditInvoiceForm from '@/components/Finance/AccountsReceivable/EditInvoiceForm.vue'
+import ViewInvoiceDetails from '@/components/Finance/AccountsReceivable/ViewInvoiceDetails.vue'
 
 interface InvoiceSummary {
     total_invoices: number
     total_amount: number
     overdue_amount: number
     paid_amount: number
+    outstanding_amount: number
 }
 
 const breadcrumbs: BreadcrumbItemType[] = [
@@ -323,12 +412,22 @@ const breadcrumbs: BreadcrumbItemType[] = [
 const loading = ref(false)
 const invoices = ref<Invoice[]>([])
 const pagination = ref<PaginatedData<Invoice> | null>(null)
+const searchQuery = ref('')
+const statusFilter = ref('all')
+
+// Modal states
+const showCreateInvoiceModal = ref(false)
+const showRecordPaymentModal = ref(false)
+const showEditInvoiceModal = ref(false)
+const showViewInvoiceModal = ref(false)
+const selectedInvoice = ref<Invoice | null>(null)
 
 const summary = ref<InvoiceSummary>({
     total_invoices: 0,
     total_amount: 0,
     overdue_amount: 0,
-    paid_amount: 0
+    paid_amount: 0,
+    outstanding_amount: 0
 })
 
 const filters = ref({
@@ -359,7 +458,8 @@ const fetchInvoices = async () => {
             total_invoices: 0,
             total_amount: 0,
             overdue_amount: 0,
-            paid_amount: 0
+            paid_amount: 0,
+            outstanding_amount: 0
         }
     } catch (error) {
         console.error('Error fetching invoices:', error)
@@ -385,14 +485,45 @@ const changePage = (page: number) => {
 }
 
 const getStatusVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
-    const variants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-        'draft': 'secondary',
-        'sent': 'default',
-        'paid': 'default',
-        'overdue': 'destructive',
-        'cancelled': 'outline'
+    switch (status) {
+        case 'draft':
+            return 'secondary'
+        case 'sent':
+            return 'default'
+        case 'open':
+            return 'default'
+        case 'partial':
+            return 'outline'
+        case 'paid':
+            return 'default'
+        case 'overdue':
+            return 'destructive'
+        case 'cancelled':
+            return 'destructive'
+        default:
+            return 'secondary'
     }
-    return variants[status] || 'secondary'
+}
+
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case 'draft':
+            return 'text-gray-600 bg-gray-100'
+        case 'sent':
+            return 'text-blue-600 bg-blue-100'
+        case 'open':
+            return 'text-blue-600 bg-blue-100'
+        case 'partial':
+            return 'text-orange-600 bg-orange-100'
+        case 'paid':
+            return 'text-green-600 bg-green-100'
+        case 'overdue':
+            return 'text-white bg-red-100'
+        case 'cancelled':
+            return 'text-white bg-red-100'
+        default:
+            return 'text-gray-600 bg-gray-100'
+    }
 }
 
 const formatCurrency = (amount: number) => {
@@ -412,6 +543,70 @@ const formatDate = (date: string) => {
 
 const isOverdue = (dueDate: string) => {
     return new Date(dueDate) < new Date()
+}
+
+const openRecordPaymentModal = (invoice: Invoice) => {
+    selectedInvoice.value = invoice
+    showViewInvoiceModal.value = false
+    showRecordPaymentModal.value = true
+}
+
+const openEditInvoiceModal = (invoice: Invoice) => {
+    selectedInvoice.value = invoice
+    showEditInvoiceModal.value = true
+}
+
+const openViewInvoiceModal = (invoice: Invoice) => {
+    selectedInvoice.value = invoice
+    showViewInvoiceModal.value = true
+}
+
+const onInvoiceCreated = () => {
+    showCreateInvoiceModal.value = false
+    // Refresh the invoices list
+    fetchInvoices()
+}
+
+const onPaymentRecorded = () => {
+    showRecordPaymentModal.value = false
+    selectedInvoice.value = null
+    // Refresh the invoices list
+    fetchInvoices()
+}
+
+const onInvoiceUpdated = () => {
+    showEditInvoiceModal.value = false
+    selectedInvoice.value = null
+    // Refresh the invoices list
+    fetchInvoices()
+}
+
+const postInvoice = async (id: number) => {
+    if (confirm('Are you sure you want to post this invoice? This will change the status from draft to sent.')) {
+        try {
+            loading.value = true
+            const response = await apiService.postInvoice(id)
+
+            if (response.success) {
+                // Refresh the invoices list
+                fetchInvoices()
+                // Show success message
+                alert('Invoice posted successfully! Status changed to sent.')
+            } else {
+                alert(`Error: ${response.message || 'Failed to post invoice'}`)
+            }
+        } catch (error: any) {
+            console.error('Error posting invoice:', error)
+
+            if (error.response?.data?.message) {
+                alert(`Error: ${error.response.data.message}`)
+            } else {
+                alert('Failed to post invoice. Please try again.')
+            }
+        } finally {
+            loading.value = false
+        }
+    }
 }
 
 onMounted(() => {

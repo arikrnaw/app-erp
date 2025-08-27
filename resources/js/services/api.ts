@@ -647,6 +647,11 @@ class ApiService {
         return response.data;
     }
 
+    async postInvoice(id: number): Promise<any> {
+        const response = await this.api.post(`/finance/accounts-receivable/invoices/${id}/post`);
+        return response.data;
+    }
+
     // Payments (Accounts Receivable)
     async getPayments(params: any = {}): Promise<any> {
         const response = await this.api.get('/finance/accounts-receivable/payments', { params });
@@ -659,6 +664,11 @@ class ApiService {
     }
 
     async createPayment(data: any): Promise<any> {
+        const response = await this.api.post('/finance/accounts-receivable/payments', data);
+        return response.data;
+    }
+
+    async recordPayment(data: any): Promise<any> {
         const response = await this.api.post('/finance/accounts-receivable/payments', data);
         return response.data;
     }

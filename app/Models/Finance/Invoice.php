@@ -18,12 +18,17 @@ class Invoice extends Model
         'customer_id',
         'invoice_date',
         'due_date',
+        'reference_type',
+        'reference_id',
         'description',
         'subtotal',
-        'total_tax',
+        'tax_amount',
+        'discount_amount',
         'total_amount',
         'paid_amount',
+        'balance_amount',
         'status',
+        'notes',
         'posted_at',
         'journal_entry_id',
         'created_by',
@@ -34,9 +39,11 @@ class Invoice extends Model
         'due_date' => 'date',
         'posted_at' => 'datetime',
         'subtotal' => 'decimal:2',
-        'total_tax' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'balance_amount' => 'decimal:2',
     ];
 
     protected $attributes = [
@@ -77,11 +84,11 @@ class Invoice extends Model
     }
 
     /**
-     * Get the invoice lines.
+     * Get the invoice items.
      */
-    public function lines(): HasMany
+    public function items(): HasMany
     {
-        return $this->hasMany(InvoiceLine::class);
+        return $this->hasMany(\App\Models\InvoiceItem::class);
     }
 
     /**
@@ -101,19 +108,19 @@ class Invoice extends Model
     }
 
     /**
-     * Scope to get only posted invoices.
+     * Scope to get only sent invoices.
      */
-    public function scopePosted($query)
+    public function scopeSent($query)
     {
-        return $query->where('status', 'posted');
+        return $query->where('status', 'sent');
     }
 
     /**
-     * Scope to get only open invoices (posted but not fully paid).
+     * Scope to get only open invoices (sent but not fully paid).
      */
     public function scopeOpen($query)
     {
-        return $query->where('status', 'posted');
+        return $query->whereIn('status', ['sent']);
     }
 
     /**
@@ -129,7 +136,7 @@ class Invoice extends Model
      */
     public function scopeOverdue($query)
     {
-        return $query->where('status', 'open')
+        return $query->whereIn('status', ['sent'])
             ->where('due_date', '<', now());
     }
 
@@ -138,7 +145,7 @@ class Invoice extends Model
      */
     public function isOverdue(): bool
     {
-        return $this->status === 'open' && $this->due_date < now();
+        return in_array($this->status, ['sent']) && $this->due_date < now();
     }
 
     /**

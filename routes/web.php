@@ -403,12 +403,21 @@ Route::middleware([
     Route::get('finance/accounts-receivable/invoices/create', function () {
         return Inertia::render('Finance/AccountsReceivable/Invoices/Create');
     })->name('finance.accounts-receivable.invoices.create');
+    Route::post('finance/accounts-receivable/invoices', function () {
+        return redirect()->route('finance.accounts-receivable.invoices.index');
+    })->name('finance.accounts-receivable.invoices.store');
     Route::get('finance/accounts-receivable/invoices/{id}', function ($id) {
         return Inertia::render('Finance/AccountsReceivable/Invoices/Show', ['id' => $id]);
     })->name('finance.accounts-receivable.invoices.show');
     Route::get('finance/accounts-receivable/invoices/{id}/edit', function ($id) {
         return Inertia::render('Finance/AccountsReceivable/Invoices/Edit', ['id' => $id]);
     })->name('finance.accounts-receivable.invoices.edit');
+    Route::put('finance/accounts-receivable/invoices/{id}', function ($id) {
+        return redirect()->route('finance.accounts-receivable.invoices.show', $id);
+    })->name('finance.accounts-receivable.invoices.update');
+    Route::delete('finance/accounts-receivable/invoices/{id}', function ($id) {
+        return redirect()->route('finance.accounts-receivable.invoices.index');
+    })->name('finance.accounts-receivable.invoices.destroy');
 
     // Finance - Accounts Receivable - Payments
     Route::get('finance/accounts-receivable/payments', function () {
