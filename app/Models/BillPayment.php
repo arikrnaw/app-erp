@@ -19,6 +19,9 @@ class BillPayment extends Model
         'reference_number',
         'amount',
         'notes',
+        'company_id',
+        'created_by',
+        'status',
     ];
 
     protected $casts = [
@@ -34,5 +37,15 @@ class BillPayment extends Model
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

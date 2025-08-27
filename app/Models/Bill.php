@@ -12,6 +12,7 @@ class Bill extends Model
     use HasFactory;
 
     protected $fillable = [
+        'company_id',
         'bill_number',
         'supplier_id',
         'bill_date',
@@ -24,6 +25,9 @@ class Bill extends Model
         'paid_amount',
         'balance_amount',
         'notes',
+        'created_by',
+        'posted_at',
+        'journal_entry_id',
     ];
 
     protected $casts = [

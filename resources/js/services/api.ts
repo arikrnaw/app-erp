@@ -709,6 +709,16 @@ class ApiService {
         return response.data;
     }
 
+    async postBill(id: number): Promise<any> {
+        const response = await this.api.post(`/finance/accounts-payable/bills/${id}/post`);
+        return response.data;
+    }
+
+    async recordBillPayment(data: any): Promise<any> {
+        const response = await this.api.post('/finance/accounts-payable/payments', data);
+        return response.data;
+    }
+
     async getBillSuppliers(): Promise<any> {
         const response = await this.api.get('/finance/accounts-payable/bills/suppliers');
         return response.data;

@@ -208,8 +208,13 @@ Route::middleware([
     
     // Bills (Accounts Payable)
     Route::apiResource('finance/accounts-payable/bills', BillController::class);
+    Route::post('finance/accounts-payable/bills/{bill}/post', [BillController::class, 'postBill']);
+    Route::post('finance/accounts-payable/payments', [BillController::class, 'recordPayment']);
     Route::get('finance/accounts-payable/bills/suppliers', [BillController::class, 'getSuppliers']);
     Route::get('finance/accounts-payable/bills/products', [BillController::class, 'getProducts']);
+    
+    // Test route for debugging
+    Route::get('finance/accounts-payable/bills/{id}/test', [BillController::class, 'testBill']);
     
     // Financial Reports
     Route::get('finance/reports/balance-sheet', [FinancialReportController::class, 'balanceSheet']);

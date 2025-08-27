@@ -780,35 +780,45 @@ export interface Payment {
 // Accounts Payable Types
 export interface Bill {
     id: number;
+    company_id: number;
     bill_number: string;
     supplier_id: number;
     supplier?: Supplier;
     bill_date: string;
     due_date: string;
-    status: 'draft' | 'received' | 'paid' | 'overdue' | 'cancelled';
+    status: 'draft' | 'received' | 'posted' | 'paid' | 'overdue' | 'cancelled';
     subtotal: number;
     tax_amount: number;
     discount_amount: number;
     total_amount: number;
     paid_amount: number;
     balance_amount: number;
+    description?: string;
     notes?: string;
+    posted_at?: string;
+    journal_entry_id?: number;
+    created_by: number;
     created_at: string;
     updated_at: string;
     items?: BillItem[];
+    lines?: BillItem[];
+    payments?: BillPayment[];
 }
 
 export interface BillItem {
     id?: number;
     bill_id?: number;
-    product_id: number;
+    product_id?: number;
     product?: Product;
     description?: string;
     quantity: number;
     unit_price: number;
-    discount_percentage: number;
-    tax_percentage: number;
+    discount_percentage?: number;
+    tax_percentage?: number;
+    tax_rate?: number;
+    tax_amount?: number;
     total_amount: number;
+    line_number?: number;
 }
 
 export interface BillPayment {
@@ -823,6 +833,7 @@ export interface BillPayment {
     reference_number?: string;
     amount: number;
     notes?: string;
+    status: string;
     created_at: string;
     updated_at: string;
 }

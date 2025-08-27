@@ -17,12 +17,10 @@
                         <Download class="h-4 w-4 mr-2" />
                         Export
                     </Button>
-                    <Link :href="route('finance.accounts-payable.bills.create')">
-                    <Button>
+                    <Button @click="openCreateModal">
                         <Plus class="w-4 h-4 mr-2" />
                         Create Bill
                     </Button>
-                    </Link>
                 </div>
             </div>
 
@@ -107,6 +105,7 @@
                                     <SelectItem value="all">All Status</SelectItem>
                                     <SelectItem value="draft">Draft</SelectItem>
                                     <SelectItem value="received">Received</SelectItem>
+                                    <SelectItem value="posted">Posted</SelectItem>
                                     <SelectItem value="paid">Paid</SelectItem>
                                     <SelectItem value="overdue">Overdue</SelectItem>
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -180,7 +179,7 @@
                                         <div class="space-y-1">
                                             <div class="font-medium">{{ bill.supplier?.name || 'N/A' }}</div>
                                             <div class="text-sm text-muted-foreground">{{ bill.supplier?.email || 'N/A'
-                                                }}</div>
+                                            }}</div>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -219,17 +218,24 @@
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem as-child>
-                                                    <Link :href="route('finance.accounts-payable.bills.show', bill.id)">
+                                                <DropdownMenuItem @click="openViewModal(bill)">
                                                     <Eye class="w-4 h-4 mr-2" />
                                                     View Details
-                                                    </Link>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem as-child v-if="bill.status === 'draft'">
-                                                    <Link :href="route('finance.accounts-payable.bills.edit', bill.id)">
+                                                <DropdownMenuItem v-if="bill.status === 'draft'"
+                                                    @click="openEditModal(bill)">
                                                     <Edit class="w-4 h-4 mr-2" />
                                                     Edit Bill
-                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem v-if="bill.status === 'draft'"
+                                                    @click="postBill(bill.id)">
+                                                    <CheckCircle class="w-4 h-4 mr-2" />
+                                                    Post Bill
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem v-if="bill.status === 'posted'"
+                                                    @click="openRecordPaymentModal(bill)">
+                                                    <CreditCard class="w-4 h-4 mr-2" />
+                                                    Record Payment
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem @click="deleteBill(bill.id)" class="text-destructive">
@@ -268,6 +274,22 @@
                 </CardContent>
             </Card>
         </div>
+
+        <!-- Create Bill Modal -->
+        <CreateBillForm :open="showCreateModal" :suppliers="suppliers" @close="closeCreateModal"
+            @created="handleBillCreated" />
+
+        <!-- Edit Bill Modal -->
+        <EditBillForm :open="showEditModal" :bill="selectedBill" :suppliers="suppliers" @close="closeEditModal"
+            @updated="handleBillUpdated" />
+
+        <!-- View Bill Details Modal -->
+        <ViewBillDetails v-if="selectedBill" :open="showViewModal" :bill="selectedBill" @close="closeViewModal"
+            @edit="handleEditFromView" @record-payment="() => { }" />
+
+        <!-- Record Payment Modal -->
+        <RecordPaymentModal v-if="selectedBill" :open="showRecordPaymentModal" :bill="selectedBill"
+            @close="closeRecordPaymentModal" @payment-recorded="handlePaymentRecorded" />
     </AppLayout>
 </template>
 
@@ -297,11 +319,16 @@ import {
     CheckCircle,
     Download,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    CreditCard
 } from 'lucide-vue-next'
 import { apiService } from '@/services/api'
 import type { Bill, PaginatedData } from '@/types/erp'
 import type { BreadcrumbItemType } from '@/types'
+import CreateBillForm from '@/components/Finance/AccountsPayable/CreateBillForm.vue'
+import EditBillForm from '@/components/Finance/AccountsPayable/EditBillForm.vue'
+import ViewBillDetails from '@/components/Finance/AccountsPayable/ViewBillDetails.vue'
+import RecordPaymentModal from '@/components/Finance/AccountsPayable/RecordPaymentModal.vue'
 
 interface BillSummary {
     total_bills: number
@@ -320,6 +347,14 @@ const breadcrumbs: BreadcrumbItemType[] = [
 const loading = ref(false)
 const bills = ref<Bill[]>([])
 const pagination = ref<PaginatedData<Bill> | null>(null)
+const suppliers = ref<any[]>([])
+
+// Modal states
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const showViewModal = ref(false)
+const showRecordPaymentModal = ref(false)
+const selectedBill = ref<Bill | null>(null)
 
 const summary = ref<BillSummary>({
     total_bills: 0,
@@ -346,6 +381,67 @@ const clearFilters = () => {
     filters.value.date_to = ''
 }
 
+// Modal methods
+const openCreateModal = () => {
+    showCreateModal.value = true
+}
+
+const openEditModal = (bill: Bill) => {
+    selectedBill.value = bill
+    showEditModal.value = true
+}
+
+const openViewModal = (bill: Bill) => {
+    selectedBill.value = bill
+    showViewModal.value = true
+}
+
+const closeCreateModal = () => {
+    showCreateModal.value = false
+}
+
+const closeEditModal = () => {
+    showEditModal.value = false
+    selectedBill.value = null
+}
+
+const closeViewModal = () => {
+    showViewModal.value = false
+    selectedBill.value = null
+}
+
+const closeRecordPaymentModal = () => {
+    showRecordPaymentModal.value = false
+    selectedBill.value = null
+}
+
+const handleBillCreated = (bill: Bill) => {
+    bills.value.unshift(bill)
+    summary.value.total_bills++
+    summary.value.total_amount += bill.total_amount
+}
+
+const handleBillUpdated = (updatedBill: Bill) => {
+    const index = bills.value.findIndex(b => b.id === updatedBill.id)
+    if (index !== -1) {
+        bills.value[index] = updatedBill
+        // Recalculate summary
+        fetchBills()
+    }
+}
+
+const handleEditFromView = () => {
+    if (selectedBill.value) {
+        closeViewModal()
+        openEditModal(selectedBill.value)
+    }
+}
+
+const handlePaymentRecorded = (payment: any) => {
+    // Refresh bills to get updated status and amounts
+    fetchBills()
+}
+
 const fetchBills = async () => {
     loading.value = true
     try {
@@ -366,6 +462,16 @@ const fetchBills = async () => {
     }
 }
 
+const fetchSuppliers = async () => {
+    try {
+        const response = await apiService.getSuppliers()
+        suppliers.value = response.data || []
+    } catch (error) {
+        console.error('Error fetching suppliers:', error)
+        suppliers.value = []
+    }
+}
+
 const deleteBill = async (id: number) => {
     if (confirm('Are you sure you want to delete this bill?')) {
         try {
@@ -377,6 +483,23 @@ const deleteBill = async (id: number) => {
     }
 }
 
+const postBill = async (id: number) => {
+    if (confirm('Are you sure you want to post this bill? This action cannot be undone.')) {
+        try {
+            await apiService.postBill(id)
+            // Refresh bills to get updated status
+            fetchBills()
+        } catch (error) {
+            console.error('Error posting bill:', error)
+        }
+    }
+}
+
+const openRecordPaymentModal = (bill: Bill) => {
+    selectedBill.value = bill
+    showRecordPaymentModal.value = true
+}
+
 const changePage = (page: number) => {
     router.get(route('finance.accounts-payable.bills.index'), { page }, { preserveState: true })
 }
@@ -385,6 +508,7 @@ const getStatusVariant = (status: string): "default" | "secondary" | "outline" |
     const variants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
         'draft': 'secondary',
         'received': 'default',
+        'posted': 'default',
         'paid': 'default',
         'overdue': 'destructive',
         'cancelled': 'outline'
@@ -413,5 +537,6 @@ const isOverdue = (dueDate: string) => {
 
 onMounted(() => {
     fetchBills()
+    fetchSuppliers()
 })
 </script>

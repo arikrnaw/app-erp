@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\Finance;
 
 use App\Http\Controllers\Controller;
-use App\Models\Finance\Bill;
-use App\Models\Finance\BillPayment;
+use App\Models\Bill;
+use App\Models\BillPayment;
 use App\Models\Finance\SupplierBalance;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
@@ -17,6 +17,14 @@ use Illuminate\Support\Facades\Validator;
 
 class AccountsPayableController extends Controller
 {
+    /**
+     * Display a listing of bills (index method for API resource)
+     */
+    public function index(Request $request): JsonResponse
+    {
+        return $this->getBills($request);
+    }
+
     /**
      * Get AP dashboard data
      */
@@ -49,7 +57,7 @@ class AccountsPayableController extends Controller
 
             // Get recent activities
             $recentBills = Bill::where('company_id', $companyId)
-                ->with(['supplier', 'lines'])
+                ->with(['supplier', 'items'])
                 ->orderBy('created_at', 'desc')
                 ->limit(10)
                 ->get();
@@ -78,6 +86,36 @@ class AccountsPayableController extends Controller
     }
 
     /**
+     * Store a newly created bill (store method for API resource)
+     */
+    public function store(Request $request): JsonResponse
+    {
+        return $this->createBill($request);
+    }
+
+    /**
+     * Display the specified bill (show method for API resource)
+     */
+    public function show($id): JsonResponse
+    {
+        try {
+            $bill = Bill::where('company_id', Auth::user()->company_id)
+                ->with(['supplier', 'items'])
+                ->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $bill
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bill not found'
+            ], 404);
+        }
+    }
+
+    /**
      * Get bills with filters
      */
     public function getBills(Request $request): JsonResponse
@@ -85,7 +123,7 @@ class AccountsPayableController extends Controller
         try {
             $companyId = Auth::user()->company_id;
             $query = Bill::where('company_id', $companyId)
-                ->with(['supplier', 'lines']);
+                ->with(['supplier', 'items']);
 
             // Apply filters
             if ($request->has('status') && $request->status !== 'all') {
@@ -108,21 +146,177 @@ class AccountsPayableController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('bill_number', 'ilike', "%{$search}%")
-                      ->orWhere('description', 'ilike', "%{$search}%");
+                      ->orWhere('notes', 'ilike', "%{$search}%");
                 });
             }
 
             $bills = $query->orderBy('bill_date', 'desc')
                 ->paginate($request->get('per_page', 15));
 
+            // Get summary for bills page
+            $summary = [
+                'total_bills' => Bill::where('company_id', $companyId)->count(),
+                'total_amount' => Bill::where('company_id', $companyId)->sum('total_amount'),
+                'overdue_amount' => Bill::where('company_id', $companyId)
+                    ->where('status', 'open')
+                    ->where('due_date', '<', now())
+                    ->sum('total_amount'),
+                'paid_amount' => Bill::where('company_id', $companyId)->sum('paid_amount'),
+            ];
+
             return response()->json([
                 'success' => true,
-                'data' => $bills
+                'data' => $bills->items(),
+                'pagination' => [
+                    'current_page' => $bills->currentPage(),
+                    'last_page' => $bills->lastPage(),
+                    'per_page' => $bills->perPage(),
+                    'total' => $bills->total(),
+                    'from' => $bills->firstItem(),
+                    'to' => $bills->lastItem(),
+                ],
+                'summary' => $summary
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error loading bills: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update the specified bill (update method for API resource)
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        try {
+            $bill = Bill::where('company_id', Auth::user()->company_id)
+                ->findOrFail($id);
+
+            // Only allow updates for draft bills
+            if ($bill->status !== 'draft') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot update non-draft bill'
+                ], 422);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'supplier_id' => 'required|exists:suppliers,id',
+                'bill_date' => 'required|date',
+                'due_date' => 'required|date|after:bill_date',
+                'description' => 'nullable|string',
+                'lines' => 'required|array|min:1',
+                'lines.*.description' => 'required|string',
+                'lines.*.quantity' => 'required|numeric|min:0.01',
+                'lines.*.unit_price' => 'required|numeric|min:0.01',
+                'lines.*.tax_rate' => 'nullable|numeric|min:0',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            // Calculate totals
+            $subtotal = 0;
+            $totalTax = 0;
+            $totalAmount = 0;
+
+            foreach ($request->lines as $line) {
+                $lineTotal = $line['quantity'] * $line['unit_price'];
+                $lineTax = $lineTotal * ($line['tax_rate'] ?? 0) / 100;
+                
+                $subtotal += $lineTotal;
+                $totalTax += $lineTax;
+            }
+
+            $totalAmount = $subtotal + $totalTax;
+
+            // Update bill
+            $bill->update([
+                'supplier_id' => $request->supplier_id,
+                'bill_date' => $request->bill_date,
+                'due_date' => $request->due_date,
+                'notes' => $request->description,
+                'subtotal' => $subtotal,
+                'tax_amount' => $totalTax,
+                'total_amount' => $totalAmount,
+                'balance_amount' => $totalAmount - $bill->paid_amount,
+            ]);
+
+            // Delete existing lines
+            $bill->items()->delete();
+
+            // Create new lines
+            foreach ($request->lines as $index => $line) {
+                $lineTotal = $line['quantity'] * $line['unit_price'];
+                $lineTax = $lineTotal * ($line['tax_rate'] ?? 0) / 100;
+                $total = $lineTotal + $lineTax;
+
+                $bill->items()->create([
+                    'bill_id' => $bill->id,
+                    'description' => $line['description'],
+                    'quantity' => $line['quantity'],
+                    'unit_price' => $line['unit_price'],
+                    'tax_percentage' => $line['tax_rate'] ?? 0,
+                    'total_amount' => $total,
+                ]);
+            }
+
+            DB::commit();
+
+            $bill->load(['supplier', 'lines']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Bill updated successfully',
+                'data' => $bill
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating bill: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove the specified bill (destroy method for API resource)
+     */
+    public function destroy($id): JsonResponse
+    {
+        try {
+            $bill = Bill::where('company_id', Auth::user()->company_id)
+                ->findOrFail($id);
+
+            // Only allow deletion for draft bills
+            if ($bill->status !== 'draft') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete non-draft bill'
+                ], 422);
+            }
+
+            $bill->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Bill deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting bill: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -177,12 +371,13 @@ class AccountsPayableController extends Controller
                 'supplier_id' => $request->supplier_id,
                 'bill_date' => $request->bill_date,
                 'due_date' => $request->due_date,
-                'description' => $request->description,
+                'notes' => $request->description,
                 'subtotal' => $subtotal,
-                'total_tax' => $totalTax,
+                'tax_amount' => $totalTax,
                 'total_amount' => $totalAmount,
                 'status' => 'draft',
-                'created_by' => Auth::id(),
+                'paid_amount' => 0,
+                'balance_amount' => $totalAmount,
             ]);
 
             // Create bill lines
@@ -190,13 +385,12 @@ class AccountsPayableController extends Controller
                 $lineTotal = $line['quantity'] * $line['unit_price'];
                 $lineTax = $lineTotal * ($line['tax_rate'] ?? 0) / 100;
 
-                $bill->lines()->create([
+                $bill->items()->create([
+                    'bill_id' => $bill->id,
                     'description' => $line['description'],
                     'quantity' => $line['quantity'],
                     'unit_price' => $line['unit_price'],
-                    'tax_rate' => $line['tax_rate'] ?? 0,
-                    'line_total' => $lineTotal,
-                    'tax_amount' => $lineTax,
+                    'tax_percentage' => $line['tax_rate'] ?? 0,
                     'total_amount' => $lineTotal + $lineTax,
                 ]);
             }
@@ -206,7 +400,7 @@ class AccountsPayableController extends Controller
 
             DB::commit();
 
-            $bill->load(['supplier', 'lines']);
+            $bill->load(['supplier', 'items']);
 
             return response()->json([
                 'success' => true,
@@ -268,7 +462,7 @@ class AccountsPayableController extends Controller
                 'entry_date' => $bill->bill_date,
                 'reference_type' => 'Bill',
                 'reference_id' => $bill->id,
-                'description' => 'Bill #' . $bill->bill_number . ' - ' . $bill->description,
+                'description' => 'Bill #' . $bill->bill_number . ' - ' . $bill->notes,
                 'total_debit' => $bill->total_amount,
                 'total_credit' => $bill->total_amount,
                 'status' => 'posted',
@@ -298,7 +492,7 @@ class AccountsPayableController extends Controller
             ]);
 
             // Debit Tax account if applicable
-            if ($bill->total_tax > 0) {
+            if ($bill->tax_amount > 0) {
                 $taxAccount = ChartOfAccount::where('company_id', Auth::user()->company_id)
                     ->where('type', 'asset')
                     ->where('name', 'like', '%Input Tax%')
@@ -309,7 +503,7 @@ class AccountsPayableController extends Controller
                         'journal_entry_id' => $journalEntry->id,
                         'account_id' => $taxAccount->id,
                         'description' => 'Input Tax - Bill #' . $bill->bill_number,
-                        'debit_amount' => $bill->total_tax,
+                        'debit_amount' => $bill->tax_amount,
                         'credit_amount' => 0,
                         'line_number' => 3,
                     ]);
@@ -327,8 +521,8 @@ class AccountsPayableController extends Controller
             $expenseAccount->increment('balance', $bill->subtotal);
             $apAccount->decrement('balance', $bill->total_amount);
             
-            if ($bill->total_tax > 0 && isset($taxAccount)) {
-                $taxAccount->increment('balance', $bill->total_tax);
+            if ($bill->tax_amount > 0 && isset($taxAccount)) {
+                $taxAccount->increment('balance', $bill->tax_amount);
             }
 
             DB::commit();
@@ -336,7 +530,7 @@ class AccountsPayableController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Bill posted successfully',
-                'data' => $bill->load(['supplier', 'lines'])
+                'data' => $bill->load(['supplier', 'items'])
             ]);
 
         } catch (\Exception $e) {

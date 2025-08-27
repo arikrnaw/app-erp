@@ -19,6 +19,7 @@ class BillItem extends Model
         'discount_percentage',
         'tax_percentage',
         'total_amount',
+        'tax_amount',
     ];
 
     protected $casts = [
