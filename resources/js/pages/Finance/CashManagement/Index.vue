@@ -1,4 +1,5 @@
 <template>
+
     <Head title="Cash Management" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
@@ -16,12 +17,10 @@
                         <Download class="h-4 w-4 mr-2" />
                         Export Cash Flow
                     </Button>
-                    <Link :href="route('finance.cash-management.transactions.create')">
-                        <Button>
-                            <Plus class="w-4 h-4 mr-2" />
-                            New Transaction
-                        </Button>
-                    </Link>
+                    <Button @click="showTransactionModal = true">
+                        <Plus class="w-4 h-4 mr-2" />
+                        New Transaction
+                    </Button>
                 </div>
             </div>
 
@@ -107,8 +106,14 @@
                     </CardHeader>
                     <CardContent>
                         <div class="space-y-4">
-                            <div v-for="account in bankAccounts" :key="account.id" 
-                                 class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                            <!-- Debug info -->
+                            <div v-if="bankAccounts.length === 0"
+                                class="text-center py-4 text-sm text-muted-foreground">
+                                No bank accounts found. Debug: {{ typeof bankAccounts }} - {{
+                                    Array.isArray(bankAccounts) ? 'Array' : 'Not Array' }}
+                            </div>
+                            <div v-for="account in bankAccounts" :key="account.id"
+                                class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                                 <div class="flex items-center space-x-3">
                                     <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
                                         <Building2 class="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -119,15 +124,15 @@
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-semibold">{{ formatCurrency(account.balance) }}</p>
+                                    <p class="font-semibold">{{ formatCurrency(parseFloat(account.balance) || 0) }}</p>
                                     <p class="text-sm text-muted-foreground">{{ account.currency }}</p>
                                 </div>
                             </div>
-                            <Link :href="route('finance.cash-management.bank-accounts.index')">
-                                <Button variant="outline" class="w-full">
-                                    <Eye class="h-4 w-4 mr-2" />
-                                    View All Bank Accounts
-                                </Button>
+                            <Link :href="route('finance.bank-reconciliation.bank-accounts.index')">
+                            <Button variant="outline" class="w-full">
+                                <Eye class="h-4 w-4 mr-2" />
+                                View All Bank Accounts
+                            </Button>
                             </Link>
                         </div>
                     </CardContent>
@@ -146,8 +151,14 @@
                     </CardHeader>
                     <CardContent>
                         <div class="space-y-4">
-                            <div v-for="fund in pettyCashFunds" :key="fund.id" 
-                                 class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                            <!-- Debug info -->
+                            <div v-if="pettyCashFunds.length === 0"
+                                class="text-center py-4 text-sm text-muted-foreground">
+                                No petty cash funds found. Debug: {{ typeof pettyCashFunds }} - {{
+                                    Array.isArray(pettyCashFunds) ? 'Array' : 'Not Array' }}
+                            </div>
+                            <div v-for="fund in pettyCashFunds" :key="fund.id"
+                                class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                                 <div class="flex items-center space-x-3">
                                     <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
                                         <Coins class="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -158,15 +169,15 @@
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-semibold">{{ formatCurrency(fund.balance) }}</p>
+                                    <p class="font-semibold">{{ formatCurrency(parseFloat(fund.balance) || 0) }}</p>
                                     <p class="text-sm text-muted-foreground">Available</p>
                                 </div>
                             </div>
                             <Link :href="route('finance.cash-management.petty-cash.index')">
-                                <Button variant="outline" class="w-full">
-                                    <Eye class="h-4 w-4 mr-2" />
-                                    View All Petty Cash
-                                </Button>
+                            <Button variant="outline" class="w-full">
+                                <Eye class="h-4 w-4 mr-2" />
+                                View All Petty Cash
+                            </Button>
                             </Link>
                         </div>
                     </CardContent>
@@ -183,20 +194,23 @@
                 </CardHeader>
                 <CardContent>
                     <div class="space-y-4">
-                        <div v-for="transaction in recentTransactions" :key="transaction.id" 
-                             class="flex items-center space-x-4 p-4 border rounded-lg hover:bg-muted/50">
+                        <div v-for="transaction in recentTransactions" :key="transaction.id"
+                            class="flex items-center space-x-4 p-4 border rounded-lg hover:bg-muted/50">
                             <div class="p-2 rounded-lg" :class="getTransactionIconClass(transaction.type)">
                                 <component :is="getTransactionIcon(transaction.type)" class="h-4 w-4" />
                             </div>
                             <div class="flex-1 space-y-1">
                                 <p class="font-medium">{{ transaction.description }}</p>
                                 <p class="text-sm text-muted-foreground">
-                                    {{ transaction.account_name }} • {{ formatDate(transaction.date) }}
+                                    {{ transaction.bank_account?.name || 'Unknown Account' }} • {{
+                                        formatDate(transaction.transaction_date) }}
                                 </p>
                             </div>
                             <div class="text-right">
-                                <p class="font-semibold" :class="transaction.amount > 0 ? 'text-green-600' : 'text-red-600'">
-                                    {{ transaction.amount > 0 ? '+' : '' }}{{ formatCurrency(transaction.amount) }}
+                                <p class="font-semibold"
+                                    :class="parseFloat(transaction.amount) > 0 ? 'text-green-600' : 'text-red-600'">
+                                    {{ parseFloat(transaction.amount) > 0 ? '+' : '' }}{{
+                                        formatCurrency(parseFloat(transaction.amount) || 0) }}
                                 </p>
                                 <Badge :variant="getStatusVariant(transaction.status)" class="text-xs">
                                     {{ transaction.status }}
@@ -221,34 +235,33 @@
                 </CardHeader>
                 <CardContent>
                     <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                        <Link :href="route('finance.cash-management.transactions.create')">
-                            <Button variant="outline" class="w-full justify-start">
-                                <Plus class="h-4 w-4 mr-2" />
-                                New Transaction
-                            </Button>
-                        </Link>
-                        <Link :href="route('finance.cash-management.bank-accounts.create')">
-                            <Button variant="outline" class="w-full justify-start">
-                                <Building2 class="h-4 w-4 mr-2" />
-                                Add Bank Account
-                            </Button>
-                        </Link>
-                        <Link :href="route('finance.cash-management.petty-cash.create')">
-                            <Button variant="outline" class="w-full justify-start">
-                                <Coins class="h-4 w-4 mr-2" />
-                                Create Petty Cash Fund
-                            </Button>
-                        </Link>
+                        <Button variant="outline" class="w-full justify-start" @click="showTransactionModal = true">
+                            <Plus class="h-4 w-4 mr-2" />
+                            New Transaction
+                        </Button>
+                        <Button variant="outline" class="w-full justify-start" @click="showBankAccountModal = true">
+                            <Building2 class="h-4 w-4 mr-2" />
+                            Add Bank Account
+                        </Button>
+                        <Button variant="outline" class="w-full justify-start" @click="showPettyCashModal = true">
+                            <Coins class="h-4 w-4 mr-2" />
+                            Create Petty Cash Fund
+                        </Button>
                         <Link :href="route('finance.cash-management.reports.cash-flow')">
-                            <Button variant="outline" class="w-full justify-start">
-                                <BarChart3 class="h-4 w-4 mr-2" />
-                                Cash Flow Report
-                            </Button>
+                        <Button variant="outline" class="w-full justify-start">
+                            <BarChart3 class="h-4 w-4 mr-2" />
+                            Cash Flow Report
+                        </Button>
                         </Link>
                     </div>
                 </CardContent>
             </Card>
         </div>
+
+        <!-- Modals -->
+        <CreateBankAccountModal v-model:open="showBankAccountModal" @created="fetchData" />
+
+        <CreatePettyCashModal v-model:open="showPettyCashModal" @created="fetchData" />
     </AppLayout>
 </template>
 
@@ -257,22 +270,22 @@ import { ref, computed, onMounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItemType } from '@/types';
-import { 
-    Card, 
-    CardContent, 
-    CardHeader, 
-    CardTitle, 
-    CardDescription 
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-    Wallet, 
-    TrendingUp, 
-    TrendingDown, 
-    Calculator, 
-    Download, 
+import {
+    Wallet,
+    TrendingUp,
+    TrendingDown,
+    Calculator,
+    Download,
     Plus,
     Building2,
     Coins,
@@ -281,6 +294,8 @@ import {
     BarChart3
 } from 'lucide-vue-next';
 import { useApi } from '@/composables/useApi';
+import CreateBankAccountModal from '@/components/Finance/CashManagement/CreateBankAccountModal.vue';
+import CreatePettyCashModal from '@/components/Finance/CashManagement/CreatePettyCashModal.vue';
 
 const breadcrumbs: BreadcrumbItemType[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -288,53 +303,160 @@ const breadcrumbs: BreadcrumbItemType[] = [
     { title: 'Cash Management', href: '/finance/cash-management' }
 ];
 
-const { api } = useApi();
+const api = useApi();
 const loading = ref(false);
 
 // Data
-const bankAccounts = ref([]);
-const pettyCashFunds = ref([]);
-const recentTransactions = ref([]);
+const bankAccounts = ref<any[]>([]);
+const pettyCashFunds = ref<any[]>([]);
+const recentTransactions = ref<any[]>([]);
+
+// Modal states
+const showBankAccountModal = ref(false);
+const showPettyCashModal = ref(false);
+const showTransactionModal = ref(false);
 
 // Computed
 const totalCashBalance = computed(() => {
-    const bankTotal = bankAccounts.value.reduce((sum, acc) => sum + acc.balance, 0);
-    const pettyTotal = pettyCashFunds.value.reduce((sum, fund) => sum + fund.balance, 0);
+    if (!Array.isArray(bankAccounts.value) || !Array.isArray(pettyCashFunds.value)) {
+        return 0;
+    }
+    const bankTotal = bankAccounts.value.reduce((sum, acc) => {
+        const balance = parseFloat(acc.balance) || 0;
+        return sum + balance;
+    }, 0);
+    const pettyTotal = pettyCashFunds.value.reduce((sum, fund) => {
+        const balance = parseFloat(fund.balance) || 0;
+        return sum + balance;
+    }, 0);
     return bankTotal + pettyTotal;
 });
 
 const totalCashInflow = computed(() => {
+    if (!Array.isArray(recentTransactions.value)) {
+        return 0;
+    }
     return recentTransactions.value
-        .filter(t => t.amount > 0)
-        .reduce((sum, t) => sum + t.amount, 0);
+        .filter(t => parseFloat(t.amount) > 0)
+        .reduce((sum, t) => {
+            const amount = parseFloat(t.amount) || 0;
+            return sum + amount;
+        }, 0);
 });
 
 const totalCashOutflow = computed(() => {
+    if (!Array.isArray(recentTransactions.value)) {
+        return 0;
+    }
     return recentTransactions.value
-        .filter(t => t.amount < 0)
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+        .filter(t => parseFloat(t.amount) < 0)
+        .reduce((sum, t) => {
+            const amount = parseFloat(t.amount) || 0;
+            return sum + Math.abs(amount);
+        }, 0);
 });
 
-const netCashFlow = computed(() => totalCashInflow.value - totalCashOutflow.value);
-const netCashFlowColor = computed(() => 
-    netCashFlow.value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-);
+const netCashFlow = computed(() => {
+    const inflow = totalCashInflow.value || 0;
+    const outflow = totalCashOutflow.value || 0;
+    return inflow - outflow;
+});
+
+const netCashFlowColor = computed(() => {
+    const flow = netCashFlow.value;
+    if (isNaN(flow) || !isFinite(flow)) return 'text-gray-600 dark:text-gray-400';
+    return flow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+});
 
 // Methods
 const fetchData = async () => {
     loading.value = true;
     try {
         const [bankResponse, pettyResponse, transactionsResponse] = await Promise.all([
-            api.get('/api/finance/cash-management/bank-accounts'),
-            api.get('/api/finance/cash-management/petty-cash'),
+            api.get('/api/finance/cash-management/bank-accounts/dashboard'),
+            api.get('/api/finance/cash-management/petty-cash/dashboard'),
             api.get('/api/finance/cash-management/transactions/recent')
         ]);
-        
-        bankAccounts.value = bankResponse.data;
-        pettyCashFunds.value = pettyResponse.data;
-        recentTransactions.value = transactionsResponse.data;
+
+        // Ensure we're getting arrays and handle potential errors
+        if (bankResponse.data && Array.isArray(bankResponse.data)) {
+            bankAccounts.value = bankResponse.data.map((acc: any) => ({
+                ...acc,
+                balance: acc.balance !== null && acc.balance !== undefined ? acc.balance : 0
+            }));
+        } else if (bankResponse.data && bankResponse.data.data && Array.isArray(bankResponse.data.data)) {
+            bankAccounts.value = bankResponse.data.data.map((acc: any) => ({
+                ...acc,
+                balance: acc.balance !== null && acc.balance !== undefined ? acc.balance : 0
+            }));
+        } else {
+            console.warn('Bank accounts data is not an array:', bankResponse.data);
+            bankAccounts.value = [];
+        }
+
+        if (pettyResponse.data && Array.isArray(pettyResponse.data)) {
+            pettyCashFunds.value = pettyResponse.data.map((fund: any) => ({
+                ...fund,
+                balance: fund.current_balance !== null && fund.current_balance !== undefined ? fund.current_balance : 0
+            }));
+        } else if (pettyResponse.data && pettyResponse.data.data && Array.isArray(pettyResponse.data.data)) {
+            pettyCashFunds.value = pettyResponse.data.data.map((fund: any) => ({
+                ...fund,
+                balance: fund.current_balance !== null && fund.current_balance !== undefined ? fund.current_balance : 0
+            }));
+        } else {
+            console.warn('Petty cash data is not an array:', pettyResponse.data);
+            pettyCashFunds.value = [];
+        }
+
+        if (transactionsResponse.data && Array.isArray(transactionsResponse.data)) {
+            recentTransactions.value = transactionsResponse.data.map((transaction: any) => ({
+                ...transaction,
+                amount: transaction.amount !== null && transaction.amount !== undefined ? transaction.amount : 0
+            }));
+        } else if (transactionsResponse.data && transactionsResponse.data.data && Array.isArray(transactionsResponse.data.data)) {
+            recentTransactions.value = transactionsResponse.data.data.map((transaction: any) => ({
+                ...transaction,
+                amount: transaction.amount !== null && transaction.amount !== undefined ? transaction.amount : 0
+            }));
+        } else {
+            console.warn('Transactions data is not an array:', transactionsResponse.data);
+            recentTransactions.value = [];
+        }
+
+        console.log('Fetched data:', {
+            bankAccounts: bankAccounts.value,
+            pettyCashFunds: pettyCashFunds.value,
+            recentTransactions: recentTransactions.value
+        });
+
+        // Debug balance values
+        console.log('Balance debugging:', {
+            bankBalances: bankAccounts.value.map(acc => ({
+                id: acc.id,
+                balance: acc.balance,
+                type: typeof acc.balance,
+                allFields: Object.keys(acc)
+            })),
+            pettyBalances: pettyCashFunds.value.map(fund => ({
+                id: fund.id,
+                balance: fund.balance,
+                type: typeof fund.balance,
+                allFields: Object.keys(fund)
+            })),
+            transactionAmounts: recentTransactions.value.map(t => ({
+                id: t.id,
+                amount: t.amount,
+                type: typeof t.amount,
+                allFields: Object.keys(t)
+            }))
+        });
     } catch (error) {
         console.error('Error fetching cash management data:', error);
+        // Set empty arrays on error to prevent crashes
+        bankAccounts.value = [];
+        pettyCashFunds.value = [];
+        recentTransactions.value = [];
     } finally {
         loading.value = false;
     }
@@ -345,7 +467,7 @@ const exportCashFlow = async () => {
         const response = await api.get('/api/finance/cash-management/export/cash-flow', {
             responseType: 'blob'
         });
-        
+
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -378,8 +500,8 @@ const getTransactionIconClass = (type: string): string => {
     return classes[type] || 'bg-gray-100 dark:bg-gray-900/20';
 };
 
-const getStatusVariant = (status: string): string => {
-    const variants: Record<string, string> = {
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
         'completed': 'default',
         'pending': 'secondary',
         'cancelled': 'destructive'
@@ -388,6 +510,10 @@ const getStatusVariant = (status: string): string => {
 };
 
 const formatCurrency = (amount: number): string => {
+    // Handle NaN and invalid numbers
+    if (isNaN(amount) || !isFinite(amount)) {
+        return 'Rp 0';
+    }
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR'

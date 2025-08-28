@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\BankAccount;
+use App\Models\Finance\BankAccount;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -20,14 +20,14 @@ class BankAccountController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('account_number', 'like', "%{$search}%")
-                  ->orWhere('account_name', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
                   ->orWhere('bank_name', 'like', "%{$search}%");
             });
         }
 
         // Status filter
-        if ($request->has('is_active') && $request->is_active !== 'all') {
-            $query->where('is_active', $request->is_active === 'true');
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
         }
 
         // Account type filter
@@ -35,7 +35,7 @@ class BankAccountController extends Controller
             $query->where('account_type', $request->account_type);
         }
 
-        $bankAccounts = $query->orderBy('bank_name')->orderBy('account_name')->paginate(15);
+        $bankAccounts = $query->orderBy('bank_name')->orderBy('name')->paginate(15);
 
         return response()->json($bankAccounts);
     }
@@ -43,13 +43,22 @@ class BankAccountController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'account_number' => 'required|string|max:255|unique:bank_accounts,account_number',
-            'account_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'account_number' => 'required|string|max:100|unique:bank_accounts,account_number',
+            'description' => 'nullable|string|max:1000',
             'bank_name' => 'required|string|max:255',
-            'account_type' => 'required|in:checking,savings,credit',
-            'opening_balance' => 'required|numeric|min:0',
-            'current_balance' => 'required|numeric',
-            'is_active' => 'boolean',
+            'bank_branch' => 'nullable|string|max:255',
+            'swift_code' => 'nullable|string|max:11',
+            'iban' => 'nullable|string|max:50',
+            'currency' => 'required|string|max:3',
+            'opening_balance' => 'nullable|numeric|min:0',
+            'opening_date' => 'nullable|date',
+            'account_type' => 'required|in:checking,savings,time_deposit,investment',
+            'status' => 'nullable|in:active,inactive',
+            'reconcile_automatically' => 'boolean',
+            'allow_overdraft' => 'boolean',
+            'include_in_cash_flow' => 'boolean',
+            'notes' => 'nullable|string|max:1000'
         ]);
 
         if ($validator->fails()) {
@@ -60,13 +69,23 @@ class BankAccountController extends Controller
             DB::beginTransaction();
 
             $bankAccount = BankAccount::create([
+                'name' => $request->name,
                 'account_number' => $request->account_number,
-                'account_name' => $request->account_name,
+                'description' => $request->description,
                 'bank_name' => $request->bank_name,
+                'bank_branch' => $request->bank_branch,
+                'swift_code' => $request->swift_code,
+                'iban' => $request->iban,
+                'currency' => $request->currency,
+                'opening_balance' => $request->opening_balance ?? 0,
+                'opening_date' => $request->opening_date,
                 'account_type' => $request->account_type,
-                'opening_balance' => $request->opening_balance,
-                'current_balance' => $request->current_balance,
-                'is_active' => $request->is_active ?? true,
+                'status' => $request->status ?? 'active',
+                'reconcile_automatically' => $request->reconcile_automatically ?? false,
+                'allow_overdraft' => $request->allow_overdraft ?? false,
+                'include_in_cash_flow' => $request->include_in_cash_flow ?? true,
+                'notes' => $request->notes,
+                'balance' => $request->opening_balance ?? 0,
             ]);
 
             DB::commit();
@@ -95,12 +114,12 @@ class BankAccountController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'account_number' => 'required|string|max:255|unique:bank_accounts,account_number,' . $bankAccount->id,
-            'account_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'bank_name' => 'required|string|max:255',
             'account_type' => 'required|in:checking,savings,credit',
             'opening_balance' => 'required|numeric|min:0',
-            'current_balance' => 'required|numeric',
-            'is_active' => 'boolean',
+            'balance' => 'required|numeric',
+            'status' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -110,12 +129,12 @@ class BankAccountController extends Controller
         try {
             $bankAccount->update([
                 'account_number' => $request->account_number,
-                'account_name' => $request->account_name,
+                'name' => $request->name,
                 'bank_name' => $request->bank_name,
                 'account_type' => $request->account_type,
                 'opening_balance' => $request->opening_balance,
-                'current_balance' => $request->current_balance,
-                'is_active' => $request->is_active,
+                'balance' => $request->balance,
+                'status' => $request->status,
             ]);
 
             return response()->json([
@@ -150,16 +169,16 @@ class BankAccountController extends Controller
 
     public function getActive(): JsonResponse
     {
-        $bankAccounts = BankAccount::where('is_active', true)
+        $bankAccounts = BankAccount::where('status', 'active')
             ->orderBy('bank_name')
-            ->orderBy('account_name')
+            ->orderBy('name')
             ->get();
         return response()->json(['bank_accounts' => $bankAccounts]);
     }
 
     public function getBalance(BankAccount $bankAccount): JsonResponse
     {
-        $currentBalance = $bankAccount->current_balance;
+        $currentBalance = $bankAccount->balance;
         $unreconciledTransactions = $bankAccount->bankTransactions()
             ->where('is_reconciled', false)
             ->get();
@@ -168,7 +187,7 @@ class BankAccountController extends Controller
         $unreconciledCredits = $unreconciledTransactions->sum('credit_amount');
 
         return response()->json([
-            'current_balance' => $currentBalance,
+            'balance' => $currentBalance,
             'unreconciled_debits' => $unreconciledDebits,
             'unreconciled_credits' => $unreconciledCredits,
             'book_balance' => $currentBalance + $unreconciledCredits - $unreconciledDebits,

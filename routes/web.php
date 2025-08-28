@@ -875,6 +875,79 @@ Route::middleware([
         Route::get('bank-transactions/{id}/edit', function ($id) {
             return Inertia::render('Finance/BankReconciliation/BankTransactions/Edit', ['id' => $id]);
         })->name('bank-transactions.edit');
+
+        // Reconciliation Process
+        Route::get('reconciliation/{bankAccountId}', function ($bankAccountId) {
+            return Inertia::render('Finance/BankReconciliation/Reconciliation', ['bankAccountId' => $bankAccountId]);
+        })->name('reconciliation.process');
+
+        Route::get('reconciliation/{bankAccountId}/summary', function ($bankAccountId) {
+            return Inertia::render('Finance/BankReconciliation/Summary', ['bankAccountId' => $bankAccountId]);
+        })->name('reconciliation.summary');
+
+        // Dashboard
+        Route::get('dashboard', function () {
+            return Inertia::render('Finance/BankReconciliation/Dashboard');
+        })->name('dashboard');
+
+        // Reconciliations List
+        Route::get('reconciliations', function () {
+            return Inertia::render('Finance/BankReconciliation/Reconciliations/Index');
+        })->name('reconciliations.index');
+
+        Route::get('reconciliations/new', function () {
+            return Inertia::render('Finance/BankReconciliation/Reconciliations/Create');
+        })->name('reconciliations.create');
+
+        // Import Statements
+        Route::get('import', function () {
+            return Inertia::render('Finance/BankReconciliation/Import/Index');
+        })->name('import.index');
+
+        // Bank Accounts
+        Route::get('bank-accounts', function () {
+            return Inertia::render('Finance/BankReconciliation/BankAccounts/Index');
+        })->name('bank-accounts.index');
+
+        // Reports
+        Route::get('reports', function () {
+            return Inertia::render('Finance/BankReconciliation/Reports/Index');
+        })->name('reports.index');
+
+        // Transaction Matching
+        Route::get('matching', function () {
+            return Inertia::render('Finance/BankReconciliation/Matching/Index');
+        })->name('matching.index');
+
+        Route::get('matching/auto', function () {
+            return Inertia::render('Finance/BankReconciliation/Matching/Auto');
+        })->name('matching.auto');
+
+        // Adjustments
+        Route::get('adjustments', function () {
+            return Inertia::render('Finance/BankReconciliation/Adjustments/Index');
+        })->name('adjustments.index');
+
+        // Reports
+        Route::get('reports', function () {
+            return Inertia::render('Finance/BankReconciliation/Reports/Index');
+        })->name('reports.index');
+
+        Route::get('reports/summary', function () {
+            return Inertia::render('Finance/BankReconciliation/Reports/Summary');
+        })->name('reports.summary');
+
+        Route::get('reports/statements', function () {
+            return Inertia::render('Finance/BankReconciliation/Reports/Statements');
+        })->name('reports.statements');
+
+        Route::get('reports/discrepancies', function () {
+            return Inertia::render('Finance/BankReconciliation/Reports/Discrepancies');
+        })->name('reports.discrepancies');
+
+        Route::get('reports/audit', function () {
+            return Inertia::render('Finance/BankReconciliation/Reports/Audit');
+        })->name('reports.audit');
     });
 
     // HR Module

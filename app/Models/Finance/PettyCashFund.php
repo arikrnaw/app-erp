@@ -15,7 +15,7 @@ class PettyCashFund extends Model
         'name',
         'custodian',
         'initial_amount',
-        'current_amount',
+        'current_balance',
         'currency',
         'description',
         'location',
@@ -27,31 +27,30 @@ class PettyCashFund extends Model
 
     protected $casts = [
         'initial_amount' => 'decimal:2',
-        'current_amount' => 'decimal:2',
-        'replenishment_threshold' => 'decimal:2',
-        'last_replenishment_date' => 'date'
+        'current_balance' => 'decimal:2',
+        'last_replenishment_date' => 'date',
+        'replenishment_threshold' => 'decimal:2'
     ];
 
     protected $attributes = [
         'status' => 'active',
-        'current_amount' => 0,
-        'replenishment_threshold' => 0
+        'currency' => 'IDR'
     ];
 
     /**
-     * Get the cash transactions for this petty cash fund
-     */
-    public function transactions(): HasMany
-    {
-        return $this->hasMany(CashTransaction::class);
-    }
-
-    /**
-     * Get the balance attribute (alias for current_amount)
+     * Get the balance attribute (alias for current_balance)
      */
     public function getBalanceAttribute()
     {
-        return $this->current_amount;
+        return $this->current_balance;
+    }
+
+    /**
+     * Get the petty cash transactions for this fund
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(CashTransaction::class, 'petty_cash_fund_id');
     }
 
     /**
@@ -75,31 +74,18 @@ class PettyCashFund extends Model
      */
     public function needsReplenishment(): bool
     {
-        return $this->current_amount <= $this->replenishment_threshold;
+        if (!$this->replenishment_threshold) {
+            return false;
+        }
+        return $this->current_balance <= $this->replenishment_threshold;
     }
 
     /**
-     * Get the amount needed for replenishment
+     * Get formatted balance
      */
-    public function getReplenishmentAmount(): float
+    public function getFormattedBalanceAttribute(): string
     {
-        return $this->initial_amount - $this->current_amount;
-    }
-
-    /**
-     * Get formatted current amount
-     */
-    public function getFormattedCurrentAmountAttribute(): string
-    {
-        return number_format($this->current_amount, 2);
-    }
-
-    /**
-     * Get formatted initial amount
-     */
-    public function getFormattedInitialAmountAttribute(): string
-    {
-        return number_format($this->initial_amount, 2);
+        return number_format($this->current_balance, 2);
     }
 
     /**
@@ -111,18 +97,18 @@ class PettyCashFund extends Model
     }
 
     /**
+     * Scope for funds by status
+     */
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    /**
      * Scope for funds by currency
      */
     public function scopeByCurrency($query, $currency)
     {
         return $query->where('currency', $currency);
-    }
-
-    /**
-     * Scope for funds that need replenishment
-     */
-    public function scopeNeedsReplenishment($query)
-    {
-        return $query->whereRaw('current_amount <= replenishment_threshold');
     }
 }

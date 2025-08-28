@@ -32,7 +32,7 @@
                                     class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     <option value="">All Bank Accounts</option>
                                     <option v-for="account in bankAccounts" :key="account?.id" :value="account?.id">
-                                        {{ account?.account_name || 'N/A' }}
+                                        {{ account?.name || 'N/A' }}
                                     </option>
                                 </select>
                                 <select v-model="reconciledFilter"
@@ -82,12 +82,12 @@
                                             <div>
                                                 <div class="font-medium">{{ transaction?.description || 'N/A' }}</div>
                                                 <div class="text-sm text-gray-500">{{ transaction?.notes || 'No notes'
-                                                }}</div>
+                                                    }}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <div class="text-sm">
-                                                {{ transaction?.bank_account?.account_name || 'N/A' }}
+                                                {{ transaction?.bank_account?.name || 'N/A' }}
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -236,7 +236,7 @@ const fetchTransactions = async () => {
         console.log('Bank Transactions API Response:', response)
 
         if (response && response.data && Array.isArray(response.data)) {
-            transactions.value = response.data.filter(transaction => transaction && typeof transaction === 'object')
+            transactions.value = response.data.filter((transaction: BankTransaction) => transaction && typeof transaction === 'object')
         } else {
             transactions.value = []
         }

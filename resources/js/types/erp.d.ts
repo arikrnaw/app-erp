@@ -869,13 +869,24 @@ export interface TaxTransaction {
 // Bank Reconciliation Types
 export interface BankAccount {
     id: number;
+    name: string;
     account_number: string;
-    account_name: string;
+    description?: string;
     bank_name: string;
-    account_type: 'checking' | 'savings' | 'credit';
+    bank_branch?: string;
+    swift_code?: string;
+    iban?: string;
+    currency: string;
     opening_balance: number;
-    current_balance: number;
-    is_active: boolean;
+    opening_date?: string;
+    account_type: 'checking' | 'savings' | 'time_deposit' | 'investment';
+    status: 'active' | 'inactive';
+    reconcile_automatically: boolean;
+    allow_overdraft: boolean;
+    include_in_cash_flow: boolean;
+    notes?: string;
+    last_reconciled_date?: string;
+    balance: number;
     created_at: string;
     updated_at: string;
 }
@@ -928,6 +939,45 @@ export interface BankReconciliationItem {
     type: 'bank' | 'book';
     is_matched: boolean;
     matched_with?: number;
+}
+
+export interface PettyCashFund {
+    id: number;
+    name: string;
+    custodian: string;
+    initial_amount: number;
+    current_balance: number;
+    currency: string;
+    description?: string;
+    location?: string;
+    status: 'active' | 'inactive';
+    last_replenishment_date?: string;
+    replenishment_threshold?: number;
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CashTransaction {
+    id: number;
+    transaction_number: string;
+    type: 'deposit' | 'withdrawal' | 'transfer' | 'expense' | 'income';
+    bank_account_id?: number;
+    bank_account?: BankAccount;
+    petty_cash_fund_id?: number;
+    petty_cash_fund?: PettyCashFund;
+    description: string;
+    amount: number;
+    currency: string;
+    transaction_date: string;
+    reference_number?: string;
+    status: 'pending' | 'completed' | 'cancelled';
+    notes?: string;
+    created_by?: string;
+    approved_by?: string;
+    approved_at?: string;
+    created_at: string;
+    updated_at: string;
 }
 
 // Financial Reports Types

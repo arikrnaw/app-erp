@@ -22,9 +22,8 @@ class CashManagementController extends Controller
         try {
             $bankAccounts = BankAccount::where('status', 'active')->get();
             $pettyCashFunds = PettyCashFund::where('status', 'active')->get();
-            $recentTransactions = CashTransaction::with(['bankAccount', 'pettyCashFund'])
-                ->latest()
-                ->take(10)
+            $recentTransactions = CashTransaction::with(['bankAccount'])
+                ->recent(10)
                 ->get();
 
             $totalCashBalance = $bankAccounts->sum('balance') + $pettyCashFunds->sum('balance');
@@ -47,6 +46,28 @@ class CashManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error fetching dashboard data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all bank accounts for dashboard (without pagination)
+     */
+    public function getBankAccountsForDashboard(): JsonResponse
+    {
+        try {
+            $bankAccounts = BankAccount::where('status', 'active')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $bankAccounts
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching bank accounts: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -269,6 +290,28 @@ class CashManagementController extends Controller
     }
 
     /**
+     * Get petty cash funds for dashboard (without pagination)
+     */
+    public function getPettyCashFundsForDashboard(): JsonResponse
+    {
+        try {
+            $pettyCashFunds = PettyCashFund::where('status', 'active')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $pettyCashFunds
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching petty cash funds: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get petty cash funds
      */
     public function getPettyCashFunds(): JsonResponse
@@ -333,9 +376,8 @@ class CashManagementController extends Controller
     public function getRecentTransactions(): JsonResponse
     {
         try {
-            $transactions = CashTransaction::with(['bankAccount', 'pettyCashFund'])
-                ->latest()
-                ->take(20)
+            $transactions = CashTransaction::with(['bankAccount'])
+                ->recent(20)
                 ->get();
 
             return response()->json([
@@ -357,12 +399,12 @@ class CashManagementController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'type' => 'required|string|in:deposit,withdrawal,transfer,expense,opening_balance',
+                'type' => 'required|string|in:deposit,withdrawal,transfer,expense,income',
                 'amount' => 'required|numeric',
                 'description' => 'required|string|max:1000',
-                'date' => 'required|date',
+                'transaction_date' => 'required|date',
                 'bank_account_id' => 'nullable|exists:bank_accounts,id',
-                'petty_cash_fund_id' => 'nullable|exists:petty_cash_funds,id',
+                'currency' => 'nullable|string|max:3',
                 'reference_number' => 'nullable|string|max:100',
                 'status' => 'nullable|string|in:completed,pending,cancelled',
                 'notes' => 'nullable|string|max:1000'
@@ -376,11 +418,11 @@ class CashManagementController extends Controller
                 ], 422);
             }
 
-            // Ensure either bank_account_id or petty_cash_fund_id is provided
-            if (!$request->bank_account_id && !$request->petty_cash_fund_id) {
+            // Ensure bank_account_id is provided
+            if (!$request->bank_account_id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Either bank account or petty cash fund must be specified'
+                    'message' => 'Bank account must be specified'
                 ], 422);
             }
 
@@ -389,20 +431,15 @@ class CashManagementController extends Controller
             $transaction = CashTransaction::create($request->all());
 
             // Update account balance
-            if ($request->bank_account_id) {
-                $bankAccount = BankAccount::find($request->bank_account_id);
-                $bankAccount->increment('balance', $request->amount);
-            } elseif ($request->petty_cash_fund_id) {
-                $pettyCashFund = PettyCashFund::find($request->petty_cash_fund_id);
-                $pettyCashFund->increment('balance', $request->amount);
-            }
+            $bankAccount = BankAccount::find($request->bank_account_id);
+            $bankAccount->increment('balance', $request->amount);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Transaction created successfully',
-                'data' => $transaction->load(['bankAccount', 'pettyCashFund'])
+                'data' => $transaction->load(['bankAccount'])
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -422,14 +459,14 @@ class CashManagementController extends Controller
             $startDate = $request->get('start_date', now()->startOfMonth());
             $endDate = $request->get('end_date', now()->endOfMonth());
 
-            $transactions = CashTransaction::with(['bankAccount', 'pettyCashFund'])
-                ->whereBetween('date', [$startDate, $endDate])
-                ->orderBy('date')
+            $transactions = CashTransaction::with(['bankAccount'])
+                ->whereBetween('transaction_date', [$startDate, $endDate])
+                ->orderBy('transaction_date')
                 ->get();
 
             // Group by month for cash flow statement
             $cashFlow = $transactions->groupBy(function ($transaction) {
-                return $transaction->date->format('Y-m');
+                return $transaction->transaction_date->format('Y-m');
             })->map(function ($monthTransactions) {
                 return [
                     'inflow' => $monthTransactions->where('amount', '>', 0)->sum('amount'),

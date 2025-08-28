@@ -5,11 +5,9 @@ namespace App\Models\Finance;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 class BankAccount extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'name',
@@ -56,6 +54,30 @@ class BankAccount extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(CashTransaction::class);
+    }
+
+    /**
+     * Get the bank transactions for this bank account
+     */
+    public function bankTransactions(): HasMany
+    {
+        return $this->hasMany(\App\Models\BankTransaction::class);
+    }
+
+    /**
+     * Get the bank reconciliations for this bank account
+     */
+    public function bankReconciliations(): HasMany
+    {
+        return $this->hasMany(BankReconciliation::class);
+    }
+
+    /**
+     * Get the bank statements for this bank account
+     */
+    public function bankStatements(): HasMany
+    {
+        return $this->hasMany(BankStatement::class);
     }
 
     /**
@@ -126,6 +148,14 @@ class BankAccount extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope for accounts by status
+     */
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status', $status);
     }
 
     /**

@@ -35,8 +35,45 @@ const shouldExpandSubMenu = (item: NavItem): boolean => {
         // Check if current URL starts with sub item href (for nested routes)
         if (subItem.href && page.url.startsWith(subItem.href)) return true;
 
+        // Check sub-submenu items
+        if (subItem.items) {
+            return subItem.items.some(subSubItem => {
+                if (subSubItem.href === page.url) return true;
+                if (subSubItem.href && page.url.startsWith(subSubItem.href)) return true;
+                return false;
+            });
+        }
+
         return false;
     });
+};
+
+// Helper function to check if a sub-submenu should be expanded
+const shouldExpandSubSubMenu = (subItem: NavItem): boolean => {
+    if (!subItem.items) return false;
+
+    return subItem.items.some(subSubItem => {
+        if (subSubItem.href === page.url) return true;
+        if (subSubItem.href && page.url.startsWith(subSubItem.href)) return true;
+        return false;
+    });
+};
+
+// Helper function to check if a submenu is active
+const isSubMenuActive = (subItem: NavItem): boolean => {
+    if (subItem.href && (subItem.href === page.url || page.url.startsWith(subItem.href))) {
+        return true;
+    }
+
+    if (subItem.items) {
+        return subItem.items.some(subSubItem => {
+            if (subSubItem.href === page.url) return true;
+            if (subSubItem.href && page.url.startsWith(subSubItem.href)) return true;
+            return false;
+        });
+    }
+
+    return false;
 };
 </script>
 
@@ -69,7 +106,36 @@ const shouldExpandSubMenu = (item: NavItem): boolean => {
                         <CollapsibleContent>
                             <SidebarMenuSub>
                                 <SidebarMenuSubItem v-for="subItem in item.items" :key="subItem.title">
-                                    <SidebarMenuButton as-child
+                                    <!-- Sub-submenu item -->
+                                    <Collapsible v-if="subItem.items && subItem.items.length > 0"
+                                        :default-open="shouldExpandSubSubMenu(subItem)" class="group/subsub">
+                                        <CollapsibleTrigger as-child>
+                                            <SidebarMenuButton :is-active="isSubMenuActive(subItem)"
+                                                :tooltip="subItem.title" class="w-full">
+                                                <component :is="subItem.icon" />
+                                                <span>{{ subItem.title }}</span>
+                                                <ChevronDown
+                                                    class="ml-auto transition-transform duration-200 group-data-[state=open]/subsub:rotate-180" />
+                                            </SidebarMenuButton>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent>
+                                            <SidebarMenuSub>
+                                                <SidebarMenuSubItem v-for="subSubItem in subItem.items"
+                                                    :key="subSubItem.title">
+                                                    <SidebarMenuButton as-child
+                                                        :is-active="subSubItem.href === page.url || page.url.startsWith(subSubItem.href || '')"
+                                                        :tooltip="subSubItem.title">
+                                                        <Link :href="subSubItem.href || '#'">
+                                                        <span>{{ subSubItem.title }}</span>
+                                                        </Link>
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuSubItem>
+                                            </SidebarMenuSub>
+                                        </CollapsibleContent>
+                                    </Collapsible>
+
+                                    <!-- Direct submenu item -->
+                                    <SidebarMenuButton v-else as-child
                                         :is-active="subItem.href === page.url || page.url.startsWith(subItem.href || '')"
                                         :tooltip="subItem.title">
                                         <Link :href="subItem.href || '#'">

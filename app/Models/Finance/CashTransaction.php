@@ -12,29 +12,31 @@ class CashTransaction extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'transaction_number',
         'type',
-        'amount',
-        'description',
-        'date',
         'bank_account_id',
         'petty_cash_fund_id',
+        'description',
+        'amount',
+        'currency',
+        'transaction_date',
         'reference_number',
         'status',
         'notes',
-        'transaction_category',
-        'related_document',
+        'created_by',
         'approved_by',
         'approved_at'
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'date' => 'date',
+        'transaction_date' => 'date',
         'approved_at' => 'datetime'
     ];
 
     protected $attributes = [
-        'status' => 'completed'
+        'status' => 'completed',
+        'currency' => 'IDR'
     ];
 
     /**
@@ -54,23 +56,7 @@ class CashTransaction extends Model
     }
 
     /**
-     * Get the account name (either bank account or petty cash fund)
-     */
-    public function getAccountNameAttribute(): string
-    {
-        if ($this->bank_account_id) {
-            return $this->bankAccount?->name ?? 'Unknown Bank Account';
-        }
-        
-        if ($this->petty_cash_fund_id) {
-            return $this->pettyCashFund?->name ?? 'Unknown Petty Cash Fund';
-        }
-        
-        return 'Unknown Account';
-    }
-
-    /**
-     * Get the transaction type label
+     * Get the type label
      */
     public function getTypeLabelAttribute(): string
     {
@@ -79,8 +65,7 @@ class CashTransaction extends Model
             'withdrawal' => 'Withdrawal',
             'transfer' => 'Transfer',
             'expense' => 'Expense',
-            'opening_balance' => 'Opening Balance',
-            'replenishment' => 'Replenishment',
+            'income' => 'Income',
             default => 'Unknown'
         };
     }
@@ -118,91 +103,11 @@ class CashTransaction extends Model
     }
 
     /**
-     * Check if transaction is a deposit
-     */
-    public function isDeposit(): bool
-    {
-        return $this->type === 'deposit';
-    }
-
-    /**
-     * Check if transaction is a withdrawal
-     */
-    public function isWithdrawal(): bool
-    {
-        return $this->type === 'withdrawal';
-    }
-
-    /**
-     * Check if transaction is a transfer
-     */
-    public function isTransfer(): bool
-    {
-        return $this->type === 'transfer';
-    }
-
-    /**
-     * Check if transaction is an expense
-     */
-    public function isExpense(): bool
-    {
-        return $this->type === 'expense';
-    }
-
-    /**
      * Get formatted amount
      */
     public function getFormattedAmountAttribute(): string
     {
         return number_format($this->amount, 2);
-    }
-
-    /**
-     * Get absolute amount (for display purposes)
-     */
-    public function getAbsoluteAmountAttribute(): float
-    {
-        return abs($this->amount);
-    }
-
-    /**
-     * Scope for transactions by type
-     */
-    public function scopeByType($query, $type)
-    {
-        return $query->where('type', $type);
-    }
-
-    /**
-     * Scope for transactions by status
-     */
-    public function scopeByStatus($query, $status)
-    {
-        return $query->where('status', $status);
-    }
-
-    /**
-     * Scope for transactions by date range
-     */
-    public function scopeByDateRange($query, $startDate, $endDate)
-    {
-        return $query->whereBetween('date', [$startDate, $endDate]);
-    }
-
-    /**
-     * Scope for bank account transactions
-     */
-    public function scopeBankAccount($query, $bankAccountId)
-    {
-        return $query->where('bank_account_id', $bankAccountId);
-    }
-
-    /**
-     * Scope for petty cash fund transactions
-     */
-    public function scopePettyCashFund($query, $pettyCashFundId)
-    {
-        return $query->where('petty_cash_fund_id', $pettyCashFundId);
     }
 
     /**
@@ -219,5 +124,29 @@ class CashTransaction extends Model
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
+    }
+
+    /**
+     * Scope for transactions by type
+     */
+    public function scopeByType($query, $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    /**
+     * Scope for transactions by date range
+     */
+    public function scopeByDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('transaction_date', [$startDate, $endDate]);
+    }
+
+    /**
+     * Scope for recent transactions
+     */
+    public function scopeRecent($query, $limit = 20)
+    {
+        return $query->orderBy('created_at', 'desc')->limit($limit);
     }
 }

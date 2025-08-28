@@ -13,14 +13,26 @@ return new class extends Migration
     {
         Schema::create('bank_accounts', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
             $table->string('account_number')->unique();
-            $table->string('account_name');
+            $table->text('description')->nullable();
             $table->string('bank_name');
-            $table->enum('account_type', ['checking', 'savings', 'credit']);
+            $table->string('bank_branch')->nullable();
+            $table->string('swift_code', 11)->nullable();
+            $table->string('iban', 50)->nullable();
+            $table->string('currency', 3);
             $table->decimal('opening_balance', 15, 2)->default(0);
-            $table->decimal('current_balance', 15, 2)->default(0);
-            $table->boolean('is_active')->default(true);
+            $table->date('opening_date')->nullable();
+            $table->enum('account_type', ['checking', 'savings', 'time_deposit', 'investment']);
+            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->boolean('reconcile_automatically')->default(false);
+            $table->boolean('allow_overdraft')->default(false);
+            $table->boolean('include_in_cash_flow')->default(true);
+            $table->text('notes')->nullable();
+            $table->date('last_reconciled_date')->nullable();
+            $table->decimal('balance', 15, 2)->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

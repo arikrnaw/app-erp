@@ -6,7 +6,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import ScrollArea from '@/components/ui/scroll-area.vue';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Package, Users, Truck, ShoppingCart, ShoppingBag, DollarSign, BookOpenCheck, Calculator, Receipt, FileText, CreditCard, Warehouse, Package2, AlertTriangle, TrendingUp, BarChart3, FileSpreadsheet, ClipboardList, PackageCheck, RotateCcw, Settings, Calendar, Wrench, UserCheck, Clock, CreditCard as CreditCardIcon, MessageSquare, Target, Users2, DollarSign as DollarSignIcon, Headphones, Shield, Ticket, Tag, Bot, Globe, Building, CheckCircle } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Package, Users, Truck, ShoppingCart, ShoppingBag, DollarSign, BookOpenCheck, Calculator, Receipt, FileText, CreditCard, Warehouse, Package2, AlertTriangle, TrendingUp, BarChart3, FileSpreadsheet, ClipboardList, PackageCheck, RotateCcw, Settings, Calendar, Wrench, UserCheck, Clock, CreditCard as CreditCardIcon, MessageSquare, Target, Users2, DollarSign as DollarSignIcon, Headphones, Shield, Ticket, Tag, Bot, Globe, Building, CheckCircle, Plus, Upload, Search, Edit3, History } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -61,8 +61,39 @@ const mainNavItems: NavItem[] = [
             },
             {
                 title: 'Bank Reconciliation',
-                href: '/finance/bank-reconciliation/bank-accounts',
                 icon: BarChart3,
+                items: [
+                    {
+                        title: 'Dashboard',
+                        href: '/finance/bank-reconciliation/dashboard',
+                        icon: LayoutGrid,
+                    },
+                    {
+                        title: 'Bank Accounts',
+                        href: '/finance/bank-reconciliation/bank-accounts',
+                        icon: Building,
+                    },
+                    {
+                        title: 'Reconciliations',
+                        href: '/finance/bank-reconciliation/reconciliations',
+                        icon: FileText,
+                    },
+                    {
+                        title: 'Import & Matching',
+                        href: '/finance/bank-reconciliation/matching',
+                        icon: Upload,
+                    },
+                    {
+                        title: 'Adjustments',
+                        href: '/finance/bank-reconciliation/adjustments',
+                        icon: Edit3,
+                    },
+                    {
+                        title: 'Reports',
+                        href: '/finance/bank-reconciliation/reports',
+                        icon: BarChart3,
+                    },
+                ],
             },
             {
                 title: 'Cash Management',

@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\TaxRateController;
 use App\Http\Controllers\Api\TaxTransactionController;
 use App\Http\Controllers\Api\BankAccountController;
 use App\Http\Controllers\Api\BankTransactionController;
+use App\Http\Controllers\Api\Finance\BankReconciliationController;
 use App\Http\Controllers\Api\InventoryTransactionController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\Api\WarehouseLocationController;
@@ -507,6 +508,7 @@ Route::prefix('ai-chat')->group(function () {
 Route::prefix('finance/cash-management')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'dashboard']);
     Route::get('/bank-accounts', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getBankAccounts']);
+    Route::get('/bank-accounts/dashboard', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getBankAccountsForDashboard']);
     Route::post('/bank-accounts', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'createBankAccount']);
     Route::get('/bank-accounts/{id}', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getBankAccount']);
     Route::put('/bank-accounts/{id}', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'updateBankAccount']);
@@ -514,12 +516,72 @@ Route::prefix('finance/cash-management')->group(function () {
     Route::get('/bank-accounts/export', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'exportBankAccounts']);
     
     Route::get('/petty-cash', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getPettyCashFunds']);
+    Route::get('/petty-cash/dashboard', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getPettyCashFundsForDashboard']);
     Route::post('/petty-cash', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'createPettyCashFund']);
     
     Route::get('/transactions/recent', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'getRecentTransactions']);
     Route::post('/transactions', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'createTransaction']);
     
     Route::get('/export/cash-flow', [App\Http\Controllers\Api\Finance\CashManagementController::class, 'exportCashFlow']);
+});
+
+// Finance - Bank Reconciliation Routes
+Route::prefix('finance/bank-reconciliation')->group(function () {
+    // Dashboard and overview
+    Route::get('/dashboard', [BankReconciliationController::class, 'dashboard']);
+    
+    // Bank account routes (tidak memerlukan reconciliation ID)
+    Route::get('/bank-accounts', [BankReconciliationController::class, 'getBankAccounts']);
+    Route::get('/bank-accounts/dashboard', [BankReconciliationController::class, 'getBankAccountsForDashboard']);
+    
+    // Adjustment routes (tidak memerlukan reconciliation ID)
+    Route::get('/adjustments', [BankReconciliationController::class, 'getAdjustments']);
+    Route::post('/adjustments', [BankReconciliationController::class, 'storeAdjustment']);
+    Route::put('/adjustments/{adjustment}', [BankReconciliationController::class, 'updateAdjustment']);
+    Route::delete('/adjustments/{adjustment}', [BankReconciliationController::class, 'destroyAdjustment']);
+    
+    // Transaction matching routes (tidak memerlukan reconciliation ID)
+    Route::get('/matching/statistics', [BankReconciliationController::class, 'getMatchingStatistics']);
+    Route::get('/matching/bank-transactions', [BankReconciliationController::class, 'getBankTransactionsForMatching']);
+    Route::get('/matching/book-transactions', [BankReconciliationController::class, 'getBookTransactionsForMatching']);
+    Route::post('/matching/match', [BankReconciliationController::class, 'matchTransactionsForMatching']);
+    Route::post('/matching/auto', [BankReconciliationController::class, 'autoMatchTransactions']);
+    Route::post('/matching/manual', [BankReconciliationController::class, 'matchTransactionsForMatching']);
+    
+    // Main reconciliation routes (memerlukan reconciliation ID)
+    Route::get('/', [BankReconciliationController::class, 'index']);
+    Route::post('/', [BankReconciliationController::class, 'store']);
+    Route::get('/recent', [BankReconciliationController::class, 'recent']);
+    Route::get('/{reconciliation}', [BankReconciliationController::class, 'show']);
+    Route::put('/{reconciliation}', [BankReconciliationController::class, 'update']);
+    Route::delete('/{reconciliation}', [BankReconciliationController::class, 'destroy']);
+    Route::post('/{reconciliation}/complete', [BankReconciliationController::class, 'complete']);
+    
+    // Bank account specific routes (memerlukan reconciliation ID)
+    Route::get('/{reconciliation}/bank-accounts/{bankAccount}/summary', [BankReconciliationController::class, 'summary']);
+    
+    // Transaction matching routes (memerlukan reconciliation ID)
+    Route::get('/{reconciliation}/suggest-matches', [BankReconciliationController::class, 'suggestMatches']);
+    Route::post('/{reconciliation}/match-transactions', [BankReconciliationController::class, 'matchTransactions']);
+    Route::post('/{reconciliation}/mark-cleared', [BankReconciliationController::class, 'markAsCleared']);
+    
+    // Notes routes (memerlukan reconciliation ID)
+    Route::post('/{reconciliation}/notes', [BankReconciliationController::class, 'storeNotes']);
+    
+    // Export routes (memerlukan reconciliation ID)
+    Route::get('/{reconciliation}/export', [BankReconciliationController::class, 'exportReconciliation']);
+    Route::get('/export/report', [BankReconciliationController::class, 'exportReport']);
+    
+    // Import routes (tidak memerlukan reconciliation ID)
+    Route::post('/import/statement', [BankReconciliationController::class, 'importStatement']);
+});
+
+// Finance - Bank Reconciliation Reports Routes (dipindah ke luar untuk menghindari konflik)
+Route::prefix('finance/bank-reconciliation-reports')->group(function () {
+    Route::get('/', [App\Http\Controllers\Api\Finance\BankReconciliationController::class, 'getReports']);
+    Route::post('/generate', [App\Http\Controllers\Api\Finance\BankReconciliationController::class, 'generateReport']);
+    Route::get('/{report}/download', [App\Http\Controllers\Api\Finance\BankReconciliationController::class, 'downloadReport']);
+    Route::get('/{report}', [App\Http\Controllers\Api\Finance\BankReconciliationController::class, 'showReport']);
 });
 
 // Finance - Fixed Assets Routes

@@ -35,7 +35,7 @@ class BankReconciliation extends Model
 
     public function bankAccount(): BelongsTo
     {
-        return $this->belongsTo(BankAccount::class);
+        return $this->belongsTo(\App\Models\Finance\BankAccount::class);
     }
 
     public function items(): HasMany
