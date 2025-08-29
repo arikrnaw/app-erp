@@ -104,7 +104,7 @@
                             Distribution of assets by category
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent class="mb-4">
                         <div class="space-y-4">
                             <div v-for="category in assetCategories" :key="category.id"
                                 class="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
@@ -115,12 +115,14 @@
                                     </div>
                                     <div>
                                         <p class="font-medium">{{ category.name }}</p>
-                                        <p class="text-sm text-muted-foreground">{{ category.count }} assets</p>
+                                        <p class="text-sm text-muted-foreground">{{ category.fixed_assets_count || 0 }}
+                                            assets</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-semibold">{{ formatCurrency(category.total_value) }}</p>
-                                    <p class="text-sm text-muted-foreground">{{ category.percentage }}%</p>
+                                    <p class="font-semibold">{{ formatCurrency(category.total_value || 0) }}</p>
+                                    <p class="text-sm text-muted-foreground">{{ (category.percentage || 0).toFixed(1)
+                                    }}%</p>
                                 </div>
                             </div>
                         </div>
@@ -147,15 +149,16 @@
                                         <Calculator class="h-4 w-4 text-green-600 dark:text-green-400" />
                                     </div>
                                     <div>
-                                        <p class="font-medium">{{ depreciation.asset_name }}</p>
-                                        <p class="text-sm text-muted-foreground">{{ depreciation.category }}</p>
+                                        <p class="font-medium">{{ depreciation.asset?.name || 'N/A' }}</p>
+                                        <p class="text-sm text-muted-foreground">{{ depreciation.asset?.category?.name
+                                            || 'N/A' }}</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
                                     <p class="font-semibold text-green-600 dark:text-green-400">
-                                        {{ formatCurrency(depreciation.amount) }}
+                                        {{ formatCurrency(parseFloat(depreciation.amount || 0)) }}
                                     </p>
-                                    <p class="text-sm text-muted-foreground">{{ depreciation.method }}</p>
+                                    <p class="text-sm text-muted-foreground">{{ depreciation.method || 'N/A' }}</p>
                                 </div>
                             </div>
                         </div>
@@ -183,7 +186,7 @@
                                 <SelectContent>
                                     <SelectItem value="all">All Categories</SelectItem>
                                     <SelectItem v-for="category in assetCategories" :key="category.id"
-                                        :value="category.id">
+                                        :value="String(category.id || '')">
                                         {{ category.name }}
                                     </SelectItem>
                                 </SelectContent>
@@ -226,7 +229,7 @@
                                     <TableCell>
                                         <div class="flex items-center space-x-3">
                                             <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                                <component :is="getCategoryIcon(asset.category)"
+                                                <component :is="getCategoryIcon(asset.category?.name || 'N/A')"
                                                     class="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                             </div>
                                             <div>
@@ -239,7 +242,7 @@
                                         <code class="px-2 py-1 bg-muted rounded text-sm">{{ asset.tag_number }}</code>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant="outline">{{ asset.category }}</Badge>
+                                        <Badge variant="outline">{{ asset.category?.name || 'N/A' }}</Badge>
                                     </TableCell>
                                     <TableCell>
                                         <div class="flex items-center space-x-2">
@@ -306,7 +309,7 @@
 
             <!-- Pagination -->
             <DataPagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
-                :total-items="totalItems" :per-page="20" @page-change="handlePageChange" />
+                :total-items="totalItems" :per-page="10" @page-change="handlePageChange" />
         </div>
     </AppLayout>
 </template>
@@ -384,11 +387,15 @@ const totalItems = ref(0);
 
 // Computed
 const totalAssetValue = computed(() =>
-    assets.value.reduce((sum, asset) => sum + asset.purchase_value, 0)
+    assets.value.reduce((sum, asset) => sum + parseFloat(asset.purchase_value || 0), 0)
 );
 
 const totalDepreciation = computed(() =>
-    assets.value.reduce((sum, asset) => sum + (asset.purchase_value - asset.current_value), 0)
+    assets.value.reduce((sum, asset) => {
+        const purchaseValue = parseFloat(asset.purchase_value || 0);
+        const currentValue = parseFloat(asset.current_value || 0);
+        return sum + (purchaseValue - currentValue);
+    }, 0)
 );
 
 const netBookValue = computed(() => totalAssetValue.value - totalDepreciation.value);
@@ -399,14 +406,14 @@ const filteredAssets = computed(() => {
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase();
         filtered = filtered.filter(asset =>
-            asset.name.toLowerCase().includes(query) ||
-            asset.tag_number.toLowerCase().includes(query) ||
-            asset.location.toLowerCase().includes(query)
+            (asset.name || '').toLowerCase().includes(query) ||
+            (asset.tag_number || '').toLowerCase().includes(query) ||
+            (asset.location || '').toLowerCase().includes(query)
         );
     }
 
     if (categoryFilter.value && categoryFilter.value !== 'all') {
-        filtered = filtered.filter(asset => asset.category_id === categoryFilter.value);
+        filtered = filtered.filter(asset => asset.category_id === parseInt(categoryFilter.value));
     }
 
     if (statusFilter.value && statusFilter.value !== 'all') {
@@ -420,21 +427,131 @@ const filteredAssets = computed(() => {
 const fetchData = async (page = 1) => {
     loading.value = true;
     try {
-        const [assetsResponse, categoriesResponse, depreciationResponse] = await Promise.all([
-            useApi().get('/api/finance/fixed-assets', { params: { page, per_page: 20 } }),
-            useApi().get('/api/finance/fixed-assets/categories'),
-            useApi().get('/api/finance/fixed-assets/monthly-depreciation')
-        ]);
+        console.log('Fetching fixed assets data...');
 
-        assets.value = assetsResponse.data.data;
-        currentPage.value = assetsResponse.data.current_page;
-        totalPages.value = assetsResponse.data.last_page;
-        totalItems.value = assetsResponse.data.total;
+        // Try to fetch assets first
+        let assetsResponse;
+        try {
+            assetsResponse = await useApi().get('/api/finance/fixed-assets', { params: { page, per_page: 20 } });
+            console.log('Assets response:', assetsResponse);
+        } catch (error) {
+            console.error('Error fetching assets:', error);
+            assetsResponse = { data: { success: false, data: { data: [], current_page: 1, last_page: 1, total: 0 } } };
+        }
 
-        assetCategories.value = categoriesResponse.data;
-        monthlyDepreciation.value = depreciationResponse.data;
+        // Try to fetch categories
+        let categoriesResponse;
+        try {
+            categoriesResponse = await useApi().get('/api/finance/fixed-assets/categories');
+            console.log('Categories response:', categoriesResponse);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            categoriesResponse = { data: [] };
+        }
+
+        // Try to fetch depreciation
+        let depreciationResponse;
+        try {
+            depreciationResponse = await useApi().get('/api/finance/fixed-assets/monthly-depreciation');
+            console.log('Depreciation response:', depreciationResponse);
+        } catch (error) {
+            console.error('Error fetching depreciation:', error);
+            depreciationResponse = { data: [] };
+        }
+
+        // Fix data access - assets are in response.data.data
+        if (assetsResponse.data?.success && assetsResponse.data?.data) {
+            assets.value = assetsResponse.data.data.data || []; // Access the nested data array
+            currentPage.value = assetsResponse.data.data.current_page || 1;
+            totalPages.value = assetsResponse.data.data.last_page || 1;
+            totalItems.value = assetsResponse.data.data.total || 0;
+
+            console.log('Assets loaded:', assets.value);
+            console.log('Pagination:', { currentPage: currentPage.value, totalPages: totalPages.value, totalItems: totalItems.value });
+        } else {
+            console.error('Invalid assets response structure:', assetsResponse);
+            assets.value = [];
+        }
+
+        // Fix categories data access
+        if (categoriesResponse.data) {
+            // Check if response has success structure
+            if (categoriesResponse.data.success && categoriesResponse.data.data) {
+                const categories = categoriesResponse.data.data;
+
+                // Calculate total_value and percentage for each category
+                assetCategories.value = categories.map((category: any) => {
+                    // Count assets in this category and sum their values
+                    const categoryAssets = assets.value.filter(asset => asset.category_id === category.id);
+                    const totalValue = categoryAssets.reduce((sum, asset) => sum + parseFloat(asset.purchase_value || 0), 0);
+                    const totalAssetValue = assets.value.reduce((sum, asset) => sum + parseFloat(asset.purchase_value || 0), 0);
+                    const percentage = totalAssetValue > 0 ? (totalValue / totalAssetValue) * 100 : 0;
+
+                    return {
+                        ...category,
+                        fixed_assets_count: categoryAssets.length,
+                        total_value: totalValue,
+                        percentage: percentage
+                    };
+                });
+            } else {
+                assetCategories.value = categoriesResponse.data;
+            }
+            console.log('Categories loaded:', assetCategories.value);
+        } else {
+            // Fallback categories
+            assetCategories.value = [
+                { id: 1, name: 'Buildings', fixed_assets_count: 0, total_value: 0, percentage: 0 },
+                { id: 2, name: 'Machinery & Equipment', fixed_assets_count: 0, total_value: 0, percentage: 0 },
+                { id: 3, name: 'Vehicles', fixed_assets_count: 0, total_value: 0, percentage: 0 },
+                { id: 4, name: 'Computers & IT', fixed_assets_count: 0, total_value: 0, percentage: 0 },
+                { id: 5, name: 'Office Furniture', fixed_assets_count: 0, total_value: 0, percentage: 0 },
+                { id: 6, name: 'Software', fixed_assets_count: 0, total_value: 0, percentage: 0 }
+            ];
+        }
+
+        // Fix depreciation data access
+        if (depreciationResponse.data) {
+            // Check if response has success structure
+            if (depreciationResponse.data.success && depreciationResponse.data.data) {
+                // Calculate real depreciation amounts for each asset
+                monthlyDepreciation.value = depreciationResponse.data.data.map((depreciation: any) => {
+                    const asset = depreciation.asset;
+                    if (asset) {
+                        // Calculate monthly depreciation based on method and useful life
+                        const purchaseValue = parseFloat(asset.purchase_value || 0);
+                        const salvageValue = parseFloat(asset.salvage_value || 0);
+                        const usefulLifeYears = parseInt(asset.useful_life_years || 1);
+
+                        let monthlyAmount = 0;
+                        if (asset.depreciation_method === 'straight_line' && usefulLifeYears > 0) {
+                            monthlyAmount = (purchaseValue - salvageValue) / (usefulLifeYears * 12);
+                        } else if (asset.depreciation_method === 'declining_balance' && usefulLifeYears > 0) {
+                            // Double declining balance method
+                            const annualRate = (2 / usefulLifeYears) * 100;
+                            monthlyAmount = (purchaseValue * (annualRate / 100)) / 12;
+                        }
+
+                        return {
+                            ...depreciation,
+                            amount: monthlyAmount.toFixed(2),
+                            calculated_amount: monthlyAmount
+                        };
+                    }
+                    return depreciation;
+                });
+            } else {
+                monthlyDepreciation.value = depreciationResponse.data;
+            }
+            console.log('Depreciation loaded:', monthlyDepreciation.value);
+        } else {
+            monthlyDepreciation.value = [];
+        }
     } catch (error) {
         console.error('Error fetching fixed assets data:', error);
+        assets.value = [];
+        assetCategories.value = [];
+        monthlyDepreciation.value = [];
     } finally {
         loading.value = false;
     }
@@ -453,13 +570,15 @@ const handlePageChange = (page: number) => {
 };
 
 const getCategoryIcon = (categoryName: string) => {
+    if (!categoryName || categoryName === 'N/A') return Building2;
+
     const icons: Record<string, any> = {
         'Buildings': Building2,
-        'Machinery': Calculator,
+        'Machinery & Equipment': Calculator,
         'Vehicles': Building2,
-        'Equipment': Calculator,
-        'Furniture': Building2,
-        'Computers': Calculator
+        'Computers & IT': Calculator,
+        'Office Furniture': Building2,
+        'Software': Calculator
     };
     return icons[categoryName] || Building2;
 };

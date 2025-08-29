@@ -3,6 +3,19 @@
     <Head title="Add Fixed Asset" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
+        <!-- Toast for notifications -->
+        <div v-if="toast.show" :class="`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${toast.type === 'success' ? 'bg-green-500 text-white' :
+            toast.type === 'error' ? 'bg-red-500 text-white' :
+                'bg-blue-500 text-white'
+            }`">
+            <div class="flex items-center space-x-2">
+                <span>{{ toast.message }}</span>
+                <button @click="toast.show = false" class="ml-2 hover:opacity-75">
+                    ×
+                </button>
+            </div>
+        </div>
+
         <div class="p-6 space-y-6">
             <!-- Header Section -->
             <div class="flex items-center justify-between">
@@ -264,6 +277,27 @@ const breadcrumbs: BreadcrumbItemType[] = [
 const loading = ref(false);
 const categories = ref<any[]>([]);
 
+// Toast state
+const toast = ref({
+    show: false,
+    message: '',
+    type: 'info' // 'success', 'error', 'info'
+});
+
+// Show toast function
+const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    toast.value = {
+        show: true,
+        message,
+        type
+    };
+
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        toast.value.show = false;
+    }, 5000);
+};
+
 const form = useForm({
     name: '',
     tag_number: '',
@@ -275,7 +309,7 @@ const form = useForm({
     manufacturer: '',
     depreciation_method: 'straight_line', // Set a default value
     useful_life: '5', // Set a default value
-    salvage_value: '',
+    salvage_value: '0', // Set default salvage value to 0
     warranty_expiry: '',
     insurance_info: '',
     status: 'active',
@@ -324,7 +358,7 @@ const fetchCategories = async () => {
     }
 };
 
-const submitForm = () => {
+const submitForm = async () => {
     // Add some debugging
     console.log('Form data being submitted:', form.data());
     console.log('Categories available:', categories.value);
@@ -344,16 +378,59 @@ const submitForm = () => {
         return;
     }
 
-    form.post(route('finance.fixed-assets.store'), {
-        onSuccess: () => {
-            // Form will automatically redirect on success
-            console.log('Asset created successfully');
-        },
-        onError: (errors: any) => {
-            // Errors will be automatically handled by Inertia
-            console.log('Form submission errors:', errors);
+    // Prepare data with correct field mapping
+    const assetData = {
+        name: form.name,
+        tag_number: form.tag_number,
+        category_id: form.category_id,
+        location: form.location || null,
+        description: form.description || null,
+        purchase_value: parseFloat(form.purchase_value),
+        purchase_date: form.purchase_date,
+        manufacturer: form.manufacturer || null,
+        depreciation_method: form.depreciation_method,
+        useful_life_years: parseInt(form.useful_life),
+        salvage_value: parseFloat(form.salvage_value || '0'),
+        warranty_expiry: form.warranty_expiry || null,
+        insurance_info: form.insurance_info || null,
+        status: form.status,
+        notes: form.notes || null
+    };
+
+    console.log('Mapped asset data:', assetData);
+
+    try {
+        loading.value = true;
+
+        const response = await useApi().post('/api/finance/fixed-assets', assetData);
+
+        if (response.data?.success) {
+            // Show success toast
+            showToast('Fixed asset created successfully!', 'success');
+
+            // Redirect to assets list on success
+            setTimeout(() => {
+                window.location.href = route('finance.fixed-assets.index');
+            }, 1500);
+        } else {
+            console.error('API Error:', response.data);
+            showToast('Error creating fixed asset', 'error');
         }
-    });
+    } catch (error: any) {
+        console.error('Error creating asset:', error);
+
+        // Handle validation errors
+        if (error.response?.data?.errors) {
+            form.setError(error.response.data.errors);
+            showToast('Please fix the validation errors', 'error');
+        } else {
+            // Show general error
+            const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+            showToast('Error creating fixed asset: ' + errorMessage, 'error');
+        }
+    } finally {
+        loading.value = false;
+    }
 };
 
 onMounted(() => {

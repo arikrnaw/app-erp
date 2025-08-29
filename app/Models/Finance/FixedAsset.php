@@ -78,7 +78,7 @@ class FixedAsset extends Model
      */
     public function depreciations(): HasMany
     {
-        return $this->hasMany(AssetDepreciation::class);
+        return $this->hasMany(AssetDepreciation::class, 'asset_id');
     }
 
     /**

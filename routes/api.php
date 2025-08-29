@@ -587,18 +587,16 @@ Route::prefix('finance/bank-reconciliation-reports')->group(function () {
 // Finance - Fixed Assets Routes
 Route::prefix('finance/fixed-assets')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'dashboard']);
+    Route::get('/categories', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getCategories']);
+    Route::post('/categories', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'createCategory']);
+    Route::get('/monthly-depreciation', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getMonthlyDepreciation']);
+    Route::get('/export', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'exportAssets']);
+    
     Route::get('/', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getAssets']);
     Route::post('/', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'createAsset']);
     Route::get('/{id}', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getAsset']);
     Route::put('/{id}', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'updateAsset']);
-    
-    Route::get('/categories', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getCategories']);
-    Route::post('/categories', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'createCategory']);
-    
-    Route::get('/monthly-depreciation', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'getMonthlyDepreciation']);
     Route::post('/{id}/calculate-depreciation', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'calculateDepreciation']);
-    
-    Route::get('/export', [App\Http\Controllers\Api\Finance\FixedAssetsController::class, 'exportAssets']);
 });
 
 // Finance - Dashboard Routes

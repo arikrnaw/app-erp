@@ -60,7 +60,7 @@ class FixedAssetsController extends Controller
     {
         try {
             $companyId = Auth::check() ? Auth::user()->company_id : 1;
-            $query = FixedAsset::with(['category', 'depreciations'])
+            $query = FixedAsset::with(['category']) // Remove depreciations to avoid relationship issues
                 ->where('company_id', $companyId);
 
             // Apply filters
@@ -142,7 +142,7 @@ class FixedAssetsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Fixed asset created successfully',
-                'data' => $asset->load(['category', 'depreciations'])
+                'data' => $asset->load(['category']) // Remove depreciations to avoid relationship issues
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -159,9 +159,8 @@ class FixedAssetsController extends Controller
     public function getAsset($id): JsonResponse
     {
         try {
-            $asset = FixedAsset::with(['category', 'depreciations' => function ($query) {
-                $query->orderBy('date', 'desc');
-            }])->findOrFail($id);
+            $asset = FixedAsset::with(['category']) // Remove depreciations to avoid relationship issues
+                ->findOrFail($id);
 
             return response()->json([
                 'success' => true,
@@ -227,7 +226,7 @@ class FixedAssetsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Fixed asset updated successfully',
-                'data' => $asset->fresh()->load(['category', 'depreciations'])
+                'data' => $asset->fresh()->load(['category']) // Remove depreciations to avoid relationship issues
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -371,6 +370,11 @@ class FixedAssetsController extends Controller
                     'asset_id' => $asset->id,
                     'date' => $request->date,
                     'amount' => $depreciationAmount,
+                    'method' => $asset->depreciation_method, // Add missing method field
+                    'period_start' => $request->date, // Add missing period_start
+                    'period_end' => $request->date->copy()->addYears($asset->useful_life_years), // Add missing period_end
+                    'company_id' => $asset->company_id, // Add missing company_id
+                    'created_by' => Auth::check() ? Auth::id() : 1, // Add missing created_by
                     'accumulated_depreciation' => $asset->accumulated_depreciation + $depreciationAmount
                 ]);
             }
@@ -428,6 +432,11 @@ class FixedAssetsController extends Controller
             'asset_id' => $asset->id,
             'date' => $asset->purchase_date,
             'amount' => $depreciationAmount,
+            'method' => $asset->depreciation_method, // Add missing method field
+            'period_start' => $asset->purchase_date, // Add missing period_start
+            'period_end' => $asset->purchase_date->copy()->addYears($asset->useful_life_years), // Add missing period_end
+            'company_id' => $asset->company_id, // Add missing company_id
+            'created_by' => $asset->created_by, // Add missing created_by
             'accumulated_depreciation' => $depreciationAmount
         ]);
 
