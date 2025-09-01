@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('bank_branch')->nullable();
             $table->string('swift_code', 11)->nullable();
             $table->string('iban', 50)->nullable();
-            $table->string('currency', 3);
+            $table->string('currency', 3)->default('IDR');
             $table->decimal('opening_balance', 15, 2)->default(0);
             $table->date('opening_date')->nullable();
             $table->enum('account_type', ['checking', 'savings', 'time_deposit', 'investment']);
