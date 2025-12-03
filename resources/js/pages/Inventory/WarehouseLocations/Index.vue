@@ -78,9 +78,9 @@
                                         <TableCell>
                                             <div>
                                                 <div class="font-medium">{{ location?.name || 'N/A' }}</div>
-                                                <div class="text-sm text-gray-500">{{ location?.description || 'No
-                                                    description'
-                                                    }}</div>
+                                                <div class="text-sm text-gray-500">{{ location?.description || `No
+                                                    description`
+                                                }}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell>

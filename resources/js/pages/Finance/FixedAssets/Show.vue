@@ -130,7 +130,7 @@
                             <div class="flex justify-between">
                                 <span class="text-sm font-medium text-muted-foreground">Description:</span>
                                 <span class="text-sm text-right max-w-xs">{{ asset.description || 'No description'
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </CardContent>
@@ -187,8 +187,8 @@
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="flex justify-between">
                             <span class="text-sm font-medium text-muted-foreground">Warranty Expiry:</span>
-                            <span class="text-sm">{{ asset.warranty_expiry ? formatDate(asset.warranty_expiry) : 'Not
-                                specified' }}</span>
+                            <span class="text-sm">{{ asset.warranty_expiry ? formatDate(asset.warranty_expiry) : `Not
+                                specified` }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-sm font-medium text-muted-foreground">Insurance Policy:</span>

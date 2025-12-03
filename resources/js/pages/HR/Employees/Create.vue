@@ -233,6 +233,7 @@
           </form>
         </div>
       </div>
+    </div>
   </AppLayout>
 </template>
 

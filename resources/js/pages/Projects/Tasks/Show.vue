@@ -255,8 +255,8 @@ const breadcrumbs = [
                             </div>
                             <div>
                                 <Label class="text-sm font-medium">Description</Label>
-                                <p class="text-sm text-muted-foreground mt-1">{{ task?.description || 'No description
-                                    available' }}</p>
+                                <p class="text-sm text-muted-foreground mt-1">{{ task?.description || `No description
+                                    available` }}</p>
                             </div>
                         </CardContent>
                     </Card>

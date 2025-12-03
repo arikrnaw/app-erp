@@ -109,10 +109,10 @@
                     <td class="py-4 px-4">
                       <div>
                         <div class="font-medium text-white">
-                                                          {{ formatCurrency(period.total_net_pay || 0) }}
+                          {{ formatCurrency(period.total_net_pay || 0) }}
                         </div>
                         <div class="text-sm text-white">
-                                                      Gross: {{ formatCurrency(period.total_gross_pay || 0) }}
+                          Gross: {{ formatCurrency(period.total_gross_pay || 0) }}
                         </div>
                       </div>
                     </td>
@@ -166,6 +166,7 @@
         </div>
       </div>
     </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">

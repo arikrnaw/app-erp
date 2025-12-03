@@ -1,4 +1,5 @@
 <template>
+
     <Head title="Import & Matching" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
@@ -97,7 +98,8 @@
                             </div>
                             <div>
                                 <h4 class="font-medium">Prepare Your File</h4>
-                                <p class="text-sm text-muted-foreground">Ensure your bank statement is in CSV, Excel, or PDF
+                                <p class="text-sm text-muted-foreground">Ensure your bank statement is in CSV, Excel, or
+                                    PDF
                                     format</p>
                             </div>
                         </div>
@@ -109,7 +111,8 @@
                             </div>
                             <div>
                                 <h4 class="font-medium">Upload Statement</h4>
-                                <p class="text-sm text-muted-foreground">Click the Import button and select your file</p>
+                                <p class="text-sm text-muted-foreground">Click the Import button and select your file
+                                </p>
                             </div>
                         </div>
 
@@ -120,7 +123,8 @@
                             </div>
                             <div>
                                 <h4 class="font-medium">Auto Match</h4>
-                                <p class="text-sm text-muted-foreground">Use auto matching to automatically match transactions
+                                <p class="text-sm text-muted-foreground">Use auto matching to automatically match
+                                    transactions
                                 </p>
                             </div>
                         </div>
@@ -136,21 +140,21 @@
                 </CardHeader>
                 <CardContent>
                     <div class="space-y-4">
-                        <div v-for="import in recentImports" :key="import.id" class="p-4 border rounded-lg">
+                        <div v-for="importItem in recentImports" :key="importItem.id" class="p-4 border rounded-lg">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <h4 class="font-medium">{{ import.bank_account_name }}</h4>
-                                    <p class="text-sm text-muted-foreground">{{ import.statement_date }} - {{
-                                        import.transactions_count }} transactions</p>
+                                    <h4 class="font-medium">{{ importItem.bank_account_name }}</h4>
+                                    <p class="text-sm text-muted-foreground">{{ importItem.statement_date }} - {{
+                                        importItem.transactions_count }} transactions</p>
                                     <div class="flex items-center space-x-2 mt-1">
-                                        <Badge variant="default">{{ import.matched_count }} Matched</Badge>
-                                        <Badge variant="secondary">{{ import.unmatched_count }} Unmatched</Badge>
+                                        <Badge variant="default">{{ importItem.matched_count }} Matched</Badge>
+                                        <Badge variant="secondary">{{ importItem.unmatched_count }} Unmatched</Badge>
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-sm text-muted-foreground">{{ import.imported_at }}</p>
-                                    <Badge :variant="import.status === 'completed' ? 'default' : 'secondary'">
-                                        {{ import.status }}
+                                    <p class="text-sm text-muted-foreground">{{ importItem.imported_at }}</p>
+                                    <Badge :variant="importItem.status === 'completed' ? 'default' : 'secondary'">
+                                        {{ importItem.status }}
                                     </Badge>
                                 </div>
                             </div>
@@ -294,7 +298,18 @@ const statistics = ref({
     matchPercentage: 0
 })
 
-const recentImports = ref([])
+interface ImportItem {
+    id: number
+    bank_account_name: string
+    statement_date: string
+    transactions_count: number
+    matched_count: number
+    unmatched_count: number
+    imported_at: string
+    status: string
+}
+
+const recentImports = ref<ImportItem[]>([])
 
 // Methods
 const fetchData = async () => {

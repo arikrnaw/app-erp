@@ -68,8 +68,8 @@ defineProps<{
 
                             <div>
                                 <label class="text-sm font-medium text-muted-foreground">Description</label>
-                                <p class="mt-1 text-sm text-muted-foreground">{{ followUp?.description || 'No
-                                    description available' }}</p>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ followUp?.description || `No
+                                    description available` }}</p>
                             </div>
                         </CardContent>
                     </Card>

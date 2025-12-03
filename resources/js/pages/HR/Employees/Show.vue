@@ -116,7 +116,7 @@
                 <div>
                   <Label class="text-sm font-medium text-gray-500">Base Salary</Label>
                   <p class="text-white mt-1">{{ employee.base_salary ? formatCurrency(employee.base_salary) : 'N/A'
-                  }}</p>
+                    }}</p>
                 </div>
                 <div>
                   <Label class="text-sm font-medium text-gray-500">Status</Label>
@@ -212,6 +212,7 @@
           </div>
         </div>
       </div>
+    </div>
   </AppLayout>
 </template>
 
