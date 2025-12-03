@@ -17,6 +17,18 @@
                         <RefreshCw class="h-4 w-4 mr-2" />
                         Refresh
                     </Button>
+                    <Button variant="outline" size="sm" @click="exportData" :disabled="loading">
+                        <Download class="h-4 w-4 mr-2" />
+                        Export
+                    </Button>
+                    <Button variant="outline" size="sm" @click="showImportModal = true" :disabled="loading">
+                        <Upload class="h-4 w-4 mr-2" />
+                        Import
+                    </Button>
+                    <Button variant="outline" size="sm" @click="downloadTemplate" :disabled="loading">
+                        <FileText class="h-4 w-4 mr-2" />
+                        Template
+                    </Button>
                     <Button @click="showNewAccountModal = true" variant="default">
                         <Plus class="h-4 w-4 mr-2" />
                         New Account
@@ -460,6 +472,55 @@
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <!-- Import Modal -->
+        <Dialog v-model:open="showImportModal">
+            <DialogContent class="!sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>Import Bank Accounts</DialogTitle>
+                    <DialogDescription>Upload an Excel file to import bank accounts</DialogDescription>
+                </DialogHeader>
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <Label for="import_file">Select Excel File</Label>
+                        <Input id="import_file" type="file" accept=".xlsx,.xls,.csv" @change="handleFileSelect"
+                            ref="fileInput" />
+                        <p class="text-xs text-muted-foreground">
+                            Supported formats: .xlsx, .xls, .csv (Max 10MB)
+                        </p>
+                    </div>
+
+                    <div v-if="importResult" class="p-4 border rounded-lg">
+                        <h4 class="font-semibold mb-2">Import Results:</h4>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span>Imported:</span>
+                                <span class="text-green-600 font-medium">{{ importResult.imported_count }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Skipped:</span>
+                                <span class="text-yellow-600 font-medium">{{ importResult.skipped_count }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="importResult.errors && importResult.errors.length > 0" class="mt-3">
+                            <h5 class="font-medium text-red-600 mb-2">Errors:</h5>
+                            <div class="max-h-32 overflow-y-auto">
+                                <ul class="text-xs text-red-600 space-y-1">
+                                    <li v-for="error in importResult.errors" :key="error">{{ error }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" @click="closeImportModal">Cancel</Button>
+                    <Button @click="importData" :disabled="!selectedFile || importing">
+                        {{ importing ? 'Importing...' : 'Import' }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>
 
@@ -475,7 +536,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Eye, RefreshCw } from 'lucide-vue-next'
+import { Plus, Eye, RefreshCw, Download, Upload, FileText } from 'lucide-vue-next'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 // Breadcrumbs
@@ -493,14 +554,19 @@ const loading = ref(false)
 const creating = ref(false)
 const editing = ref(false)
 const deleting = ref(false)
+const importing = ref(false)
 const showNewAccountModal = ref(false)
 const showViewAccountModal = ref(false)
 const showEditAccountModal = ref(false)
 const showDeleteAccountModal = ref(false)
+const showImportModal = ref(false)
 
 // Data
 const bankAccounts = ref<any[]>([])
 const selectedAccount = ref<any>(null)
+const selectedFile = ref<File | null>(null)
+const importResult = ref<any>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 // Form data
 const newAccount = ref({
@@ -666,6 +732,89 @@ const formatCurrency = (amount: number) => {
         style: 'currency',
         currency: 'IDR'
     }).format(amount)
+}
+
+const exportData = async () => {
+    try {
+        const response = await get('/api/bank/accounts/export', {
+            responseType: 'blob'
+        })
+
+        // Create download link
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `bank_accounts_${new Date().toISOString().split('T')[0]}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    } catch (error) {
+        console.error('Export failed:', error)
+    }
+}
+
+const downloadTemplate = async () => {
+    try {
+        const response = await get('/api/bank/accounts/template', {
+            responseType: 'blob'
+        })
+
+        // Create download link
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `bank_accounts_template_${new Date().toISOString().split('T')[0]}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    } catch (error) {
+        console.error('Template download failed:', error)
+    }
+}
+
+const handleFileSelect = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    if (target.files && target.files[0]) {
+        selectedFile.value = target.files[0]
+        importResult.value = null
+    }
+}
+
+const importData = async () => {
+    if (!selectedFile.value) return
+
+    try {
+        importing.value = true
+        const formData = new FormData()
+        formData.append('file', selectedFile.value)
+
+        const response = await post('/api/bank/accounts/import', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+
+        importResult.value = response.data
+
+        if (response.data.imported_count > 0) {
+            await fetchBankAccounts()
+        }
+    } catch (error) {
+        console.error('Import failed:', error)
+    } finally {
+        importing.value = false
+    }
+}
+
+const closeImportModal = () => {
+    showImportModal.value = false
+    selectedFile.value = null
+    importResult.value = null
+    if (fileInput.value) {
+        fileInput.value.value = ''
+    }
 }
 
 // Lifecycle

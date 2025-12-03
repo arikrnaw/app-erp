@@ -244,6 +244,13 @@ Route::middleware([
         Route::get('/accounts', [BankAccountController::class, 'index']);
         Route::post('/accounts', [BankAccountController::class, 'store']);
         Route::get('/accounts/active', [BankAccountController::class, 'getActive']);
+        
+        // Export and Import routes (must be before parameterized routes)
+        Route::get('/accounts/export', [BankAccountController::class, 'export']);
+        Route::post('/accounts/import', [BankAccountController::class, 'import']);
+        Route::get('/accounts/template', [BankAccountController::class, 'downloadTemplate']);
+        
+        // Parameterized routes (must be after specific routes)
         Route::get('/accounts/{bankAccount}/balance', [BankAccountController::class, 'getBalance']);
         Route::get('/accounts/{bankAccount}', [BankAccountController::class, 'show']);
         Route::put('/accounts/{bankAccount}', [BankAccountController::class, 'update']);

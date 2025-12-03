@@ -4,10 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Finance\BankAccount;
+use App\Exports\BankAccountExport;
+use App\Exports\BankAccountTemplateExport;
+use App\Imports\BankAccountImport;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BankAccountController extends Controller
 {
@@ -193,5 +198,63 @@ class BankAccountController extends Controller
             'book_balance' => $currentBalance + $unreconciledCredits - $unreconciledDebits,
             'unreconciled_transactions_count' => $unreconciledTransactions->count()
         ]);
+    }
+
+    /**
+     * Export bank accounts to Excel
+     */
+    public function export(Request $request): BinaryFileResponse
+    {
+        $filters = $request->only(['search', 'status', 'account_type']);
+        
+        $fileName = 'bank_accounts_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        
+        return Excel::download(new BankAccountExport($filters), $fileName);
+    }
+
+    /**
+     * Import bank accounts from Excel
+     */
+    public function import(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240' // 10MB max
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $import = new BankAccountImport();
+            Excel::import($import, $request->file('file'));
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Bank accounts imported successfully',
+                'imported_count' => $import->getImportedCount(),
+                'skipped_count' => $import->getSkippedCount(),
+                'errors' => $import->getErrors()
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Error importing bank accounts: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download template for import
+     */
+    public function downloadTemplate(): BinaryFileResponse
+    {
+        $fileName = 'bank_accounts_template_' . now()->format('Y-m-d') . '.xlsx';
+        
+        return Excel::download(new BankAccountTemplateExport(), $fileName);
     }
 }
