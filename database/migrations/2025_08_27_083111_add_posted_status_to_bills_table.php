@@ -12,11 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop the existing check constraint
-        DB::statement("ALTER TABLE bills DROP CONSTRAINT bills_status_check");
-        
-        // Add new check constraint with 'posted' status
-        DB::statement("ALTER TABLE bills ADD CONSTRAINT bills_status_check CHECK (status IN ('draft', 'posted', 'received', 'paid', 'overdue', 'cancelled'))");
+        // Modify the enum column to include 'posted' status
+        DB::statement("ALTER TABLE bills MODIFY COLUMN status ENUM('draft', 'posted', 'received', 'paid', 'overdue', 'cancelled') DEFAULT 'draft'");
     }
 
     /**
@@ -24,10 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Drop the new constraint
-        DB::statement("ALTER TABLE bills DROP CONSTRAINT bills_status_check");
-        
-        // Restore the original constraint
-        DB::statement("ALTER TABLE bills ADD CONSTRAINT bills_status_check CHECK (status IN ('draft', 'received', 'paid', 'overdue', 'cancelled'))");
+        // Restore the original enum values
+        DB::statement("ALTER TABLE bills MODIFY COLUMN status ENUM('draft', 'received', 'paid', 'overdue', 'cancelled') DEFAULT 'draft'");
     }
 };
