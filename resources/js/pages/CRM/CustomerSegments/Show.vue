@@ -52,8 +52,8 @@ defineProps<{
                     </div>
                     <div class="mt-4">
                         <label class="text-sm font-medium text-muted-foreground">Description</label>
-                        <p class="mt-1 text-sm text-muted-foreground">{{ segment?.description || 'No description
-                            available' }}</p>
+                        <p class="mt-1 text-sm text-muted-foreground">{{ segment?.description || `No description
+                            available` }}</p>
                     </div>
                 </CardContent>
             </Card>
