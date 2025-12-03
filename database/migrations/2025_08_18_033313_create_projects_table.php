@@ -25,7 +25,7 @@ return new class extends Migration
             $table->decimal('budget', 15, 2)->default(0);
             $table->decimal('actual_cost', 15, 2)->default(0);
             $table->decimal('progress_percentage', 5, 2)->default(0);
-            $table->foreignId('project_manager_id')->constrained('users')->onDelete('set null');
+            $table->foreignId('project_manager_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('client_id')->nullable()->constrained('customers')->onDelete('set null');
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->string('location')->nullable();
