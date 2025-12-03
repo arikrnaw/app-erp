@@ -24,7 +24,7 @@ return new class extends Migration
 
             // Indexes
             $table->index(['base_currency_id', 'target_currency_id']);
-            $table->index(['base_currency_id', 'target_currency_id', 'effective_date']);
+            $table->index(['base_currency_id', 'target_currency_id', 'effective_date'], 'idx_ex_rates_curr_date');
             $table->index('effective_date');
             $table->index('source');
             $table->index('is_active');
