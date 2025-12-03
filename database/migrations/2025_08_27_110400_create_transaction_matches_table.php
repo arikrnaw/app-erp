@@ -28,7 +28,7 @@ return new class extends Migration
 
             // Indexes
             $table->index(['reconciliation_id', 'match_type']);
-            $table->index(['bank_transaction_id', 'book_transaction_id']);
+            $table->index(['bank_transaction_id', 'book_transaction_id'], 'idx_trans_matches_ids');
             $table->index('match_score');
             $table->index('match_type');
 
